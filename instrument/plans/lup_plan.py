@@ -20,7 +20,7 @@ from ..framework.initialize import bec
 
 def lup(detectors, motor, start, finish, npts=5, key="cen"):
     """
-    Lineup a positioner.
+    Lineup a positioner.  start and finish are relative to the current motor position.
 
     Step-scan the motor from start to finish and collect data from the detectors.
     The **first** detector in the list will be used to assess alignment.
