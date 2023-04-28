@@ -4,7 +4,7 @@
 
 #--------------------
 # change the program defaults here
-DATABROKER_CATALOG=training
+# DATABROKER_CATALOG=1id_hexm  # defined in run_qstarter_py.sh
 DEFAULT_SESSION_NAME="bluesky_queueserver-${DATABROKER_CATALOG}"
 #--------------------
 

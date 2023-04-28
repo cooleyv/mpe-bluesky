@@ -1,42 +1,6 @@
 #!/bin/bash
 
-# manage the bluesky queueserver
-
-#--------------------
-# change the program defaults here
-# TODO: CONDA_ENVIRONMENT="${BLUESKY_CONDA_ENV:-training_2022}"
-CONDA_ENVIRONMENT=training_2022
-DATABROKER_CATALOG=training
-#--------------------
-
-# activate conda environment
-
-# In GitHub Actions workflow,
-# $CONDA is an environment variable pointing to the
-# root of the miniconda directory
-if [ "${CONDA}" == "" ] ; then
-    CONDA=/APSshare/miniconda/x86_64
-    if [ ! -d "${CONDA}" ]; then
-        if [ "${CONDA_EXE}" != "" ]; then
-            # CONDA_EXE is the conda exectuable
-            CONDA=$(dirname $(dirname $(readlink -f "${CONDA_EXE}")))
-        else
-            # fallback
-            CONDA=/opt/miniconda3
-        fi
-    fi
-fi
-CONDA_BASE_DIR="${CONDA}/bin"
-
-# In GitHub Actions workflow,
-# $ENV_NAME is an environment variable naming the conda environment to be used
-if [ -z "${ENV_NAME}" ] ; then
-    ENV_NAME="${CONDA_ENVIRONMENT}"
-fi
-
-# echo "Environment: $(env | sort)"
-
-source "${CONDA_BASE_DIR}/activate" "${ENV_NAME}"
+# Manage the bluesky queueserver.
 
 SHELL_SCRIPT_NAME=${BASH_SOURCE:-${0}}
 if [ -z "$STARTUP_DIR" ] ; then
@@ -44,9 +8,37 @@ if [ -z "$STARTUP_DIR" ] ; then
     STARTUP_DIR=$(dirname "${SHELL_SCRIPT_NAME}")
 fi
 
+#--------------------
+# change the program defaults here
+export BDP_CONDA_BASE=/APSshare/miniconda/x86_64
+export BDP_CONDA_ENV=bluesky_2023_2
+export CONDA_ENV_HOME="${HOME}/.conda/envs"
+export DATABROKER_CATALOG=1id_hexm
+export QS_SERVER_HOST=haydn.xray.aps.anl.gov
+export USER_GROUP_PERMISSIONS_FILE="${STARTUP_DIR}/user_group_permissions.yaml"
+export USER_GROUP_PERMISSIONS_RELOAD=ON_STARTUP
+#--------------------
+
+# QS and redis must be on the same workstation
+if [ "$(hostname)" != "${QS_SERVER_HOST}" ]; then
+    echo "Must run queueserver on ${QS_SERVER_HOST}.  This is $(hostname)"
+    exit 1
+fi
+# So, REDIS_ADDR is always localhost.
+# Override if it is not, but you may encounter access issues.  YOYO.
+export REDIS_ADDR=localhost
+
+
+# activate conda environment
+source "${BDP_CONDA_BASE}/etc/profile.d/conda.sh"
+echo "activate Python environment for bluesky and queueserver"
+conda activate "${CONDA_ENV_HOME}/${BDP_CONDA_ENV}"
+
 start-re-manager \
+    --redis-addr "${REDIS_ADDR}" \
     --startup-dir "${STARTUP_DIR}" \
     --update-existing-plans-devices ENVIRONMENT_OPEN \
+    --user-group-permissions "${USER_GROUP_PERMISSIONS_FILE}" \
+    --user-group-permissions-reload "${USER_GROUP_PERMISSIONS_RELOAD}" \
     --zmq-publish-console ON \
     --keep-re
-    # --databroker-config "${DATABROKER_CATALOG}"

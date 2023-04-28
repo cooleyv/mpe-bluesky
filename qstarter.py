@@ -1,17 +1,8 @@
 """
 Load devices and plans for bluesky queueserver.
 
-How to start the queueserver process::
-
-    DATABROKER_CATALOG=training
-    STARTUP_DIR=$(pwd)
-
-    start-re-manager \
-        --startup-dir "${STARTUP_DIR}" \
-        --update-existing-plans-devices ENVIRONMENT_OPEN \
-        --zmq-publish-console ON \
-        --databroker-config "${DATABROKER_CATALOG}"
-
+How to start the queueserver process:
+See file ``./run_qstarter_py.sh```
 """
 
 import pathlib
