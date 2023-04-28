@@ -10,8 +10,25 @@
   become_bluesky
   ```
 
+  Start the QS GUI:
+
   ```bash
-  queue-monitor &
+  queue-monitor \
+  --zmq-control-addr tcp://haydn.xray.aps.anl.gov:60615 \
+  --zmq-info-addr tcp://haydn.xray.aps.anl.gov:60625 &
+  ```
+
+<!--
+usage: queue-monitor \
+  --zmq-control-addr tcp://localhost:60615. \
+  --zmq-info-addr tcp://localhost:60625 \
+  --http-server-uri http://localhost:60610
+-->
+
+  Watch the QS console from a terminal session:
+
+  ```bash
+  qserver-console-monitor --zmq-info-addr tcp://haydn.xray.aps.anl.gov:60625
   ```
 
 - haydn: QS (queueserver) server
