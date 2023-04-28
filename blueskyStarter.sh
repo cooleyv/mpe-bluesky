@@ -71,9 +71,9 @@ pick () {  # activate ENV_NAME using (conda) from given arg
 
 pick_environment_executable () {  # Activate the environment
     # Pick the first "hit"
-    pick "${HOME}" \
+    pick "/APSshare/miniconda/x86_64" \
+    || pick "${HOME}" \
     || pick "conda" \
-    || pick "/APSshare/miniconda/x86_64" \
     || pick "/opt/miniconda3" \
     || pick "${HOME}/Apps/miniconda" \
     || pick "${HOME}/Apps/anaconda"
