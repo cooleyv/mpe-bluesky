@@ -5,6 +5,7 @@
 - all
   
   ```bash
+  bash
   cd ~/bluesky
   become_bluesky
   ```

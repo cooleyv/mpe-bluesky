@@ -12,7 +12,7 @@ DATABROKER_CATALOG: &databroker_catalog 1id_hexm
 RUNENGINE_METADATA:
   beamline_id: 1-ID-C
   instrument_name: HEXM
-  proposal_id: bdp2023
+  proposal_id: APSU-bdp2023
   databroker_catalog: *databroker_catalog
 
 # # area detector paths used by training IOC
