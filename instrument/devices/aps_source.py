@@ -15,4 +15,13 @@ logger.info(__file__)
 import apstools.devices
 
 
-aps = apstools.devices.ApsMachineParametersDevice(name="aps")
+class MyAPSMachine(apstools.devices.ApsMachineParametersDevice):
+
+    # TODO: Confirm these are available during APS-U commissioning
+    # not available during APS year-long shutdown
+    global_feedback = None
+    global_feedback_h = None
+    global_feedback_v = None
+
+
+aps = MyAPSMachine(name="aps")
