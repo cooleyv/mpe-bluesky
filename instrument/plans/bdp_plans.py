@@ -21,7 +21,7 @@ from ..framework.initialize import bec
 DEFAULT_IMAGE_DIR = "/home/1-id"  # TODO: s1iddata
 
 
-def demo202305(image_dir=DEFAULT_IMAGE_DIR, fly_scan_time=60):
+def demo202305(image_dir=DEFAULT_IMAGE_DIR, fly_scan_time=60, md={}):
     """
     BDP: Simulate acquisition of a set of image files and start DM workflow.
 
@@ -40,10 +40,11 @@ def demo202305(image_dir=DEFAULT_IMAGE_DIR, fly_scan_time=60):
         "In demo202305() plan."
         f"  {image_dir=}"
         f" (exists: {image_path.exists()})"
-        f" {fly_scan_time=} s",
+        f" {fly_scan_time=} s"
+        f" {md=} s"
         )
 
     print(f"Simulate fly scan for {fly_scan_time} s")
     yield from bps.sleep(fly_scan_time)
 
-    print("Data collection complete.")
+    print("Data collection (simulation) complete.")
