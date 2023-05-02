@@ -29,6 +29,9 @@ RUNENGINE_METADATA:
 USE_PROGRESS_BAR: false
 WRITE_SPEC_DATA_FILES: true
 
+# APS Data Management environment variables
+DM_SETUP_FILE: "/home/beams/S1IDTEST/BDP/etc/dm.setup.sh"
+
 # ----------------------------------
 
 # Directory to "autosave" the RE.md dictionary (uses PersistentDict)
