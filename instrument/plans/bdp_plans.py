@@ -17,11 +17,18 @@ from bluesky import plans as bp
 import pathlib
 
 from ..framework.initialize import bec
+from ..framework import dm_start_workflow
 
 DEFAULT_IMAGE_DIR = "/home/1-id"  # TODO: s1iddata
 
 
-def demo202305(image_dir=DEFAULT_IMAGE_DIR, fly_scan_time=60, md={}):
+def demo202305(
+    image_dir=DEFAULT_IMAGE_DIR, 
+    fly_scan_time=60, 
+    dm_workflow="example-01",
+    dm_filePath="/home/beams/S1IDTEST/.bashrc",
+    md={}
+):
     """
     BDP: Simulate acquisition of a set of image files and start DM workflow.
 
@@ -48,3 +55,5 @@ def demo202305(image_dir=DEFAULT_IMAGE_DIR, fly_scan_time=60, md={}):
     yield from bps.sleep(fly_scan_time)
 
     print("Data collection (simulation) complete.")
+    print(f"Start DM workflow: {dm_workflow=}")
+    dm_start_workflow(dm_workflow, filePath=dm_filePath)
