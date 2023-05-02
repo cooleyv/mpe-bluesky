@@ -24,6 +24,7 @@ if DM_SETUP_FILE is None:
 else:
     from dm import ProcApiFactory
 
+    # parse environment variables from bash script
     ENV_VAR_FILE = pathlib.Path(DM_SETUP_FILE)
     logger.info("APS DM environment file: %s", str(ENV_VAR_FILE))
     ENV_VARS = {}

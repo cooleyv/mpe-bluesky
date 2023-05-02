@@ -29,7 +29,7 @@ RUNENGINE_METADATA:
 USE_PROGRESS_BAR: false
 WRITE_SPEC_DATA_FILES: true
 
-# APS Data Management environment variables
+# APS Data Management
 DM_SETUP_FILE: "/home/beams/S1IDTEST/BDP/etc/dm.setup.sh"
 
 # ----------------------------------
