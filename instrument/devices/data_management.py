@@ -2,9 +2,10 @@
 Connect with APS Data Management workflows.
 """
 
-__all__ = [
-    "DM_Workflow",
-]
+__all__ = """
+    DM_Workflow
+    dm_workflow
+""".split()
 
 import logging
 import os
@@ -17,37 +18,63 @@ logger.info(__file__)
 
 from apstools.utils import run_in_thread
 from dm import ProcApiFactory
+from ophyd import Component, Device, Signal
 
 DEFAULT_FILE_PATH = pathlib.Path.home() / "BDP" / "etc" / "dm.setup.sh"
 DEFAULT_WORKFLOW_NAME = "example-01"
+ID_NO_JOB = "not_run"
+ID_JOB_STARTING = "starting"
+DEFAULT_WORKFLOW_ARGS = dict(filePath=str(DEFAULT_FILE_PATH))
 
 
-class DM_Workflow:
+class DM_Workflow(Device):
     """
     Support for the APS Data Management tools.
+
+    The DM workflow dictionary of arguments ()``workflow_kwargs``)
+    needs special attention.  Python's ``dict`` structure is not
+    compatible with MongoDB.  In turn, ophyd does not support it.
+    A custom plan can choose how to use `the `workflow_kwargs`` dictionary:
+        - use with DM workflow, as planned
+        - add ``workflow_kwargs`` to the start metadata
+        - write as run stream::
+
+            from apstools.devices import make_dict_device
+            from apstools.plans import write_stream
+
+            yield from write_stream(
+                [
+                    make_dict_device(workflow_kwargs, name="kwargs")
+                ],
+                "dm_workflow_kwargs"
+            )
+
     """
 
-    workflow_name = DEFAULT_WORKFLOW_NAME
-    workflow_args = dict(filePath=str(DEFAULT_FILE_PATH))
+    workflow_name = Component(Signal, value=DEFAULT_WORKFLOW_NAME)
+    # Dictionary structure is not compatible with MongoDB.
+    # So, ophyd, in turn, does not support it.
+    workflow_kwargs = DEFAULT_WORKFLOW_ARGS
     job = None
-    job_id = None
-    owner = str(os.environ["DM_STATION_NAME"]).lower()
-    wait_reporting_period = 2
-    wait_reporting_verbose = True
+    job_id = Component(Signal, value=ID_NO_JOB, kind="config")
+    owner = Component(
+        Signal, value=str(os.environ["DM_STATION_NAME"]).lower(), kind="config"
+    )
+    wait_reporting_period = Component(Signal, value=2, kind="config")
+    wait_reporting_verbose = Component(Signal, value=True, kind="config")
 
     def __repr__(self):
-        innards = (
-            f"'{self.workflow_name}'"
-            f", argsDict={self.workflow_args}"
-        )
-        if self.job_id is not None:
-            innards += f", id='{self.job_id}'"
-        return (f"DM_Workflow({innards})"
-        )
+        innards = f"'{self.workflow_name.get()}'" f", argsDict={self.workflow_kwargs}"
+        if self.job_id.get() != ID_NO_JOB:
+            innards += f", id='{self.job_id.get()}'"
+        return f"DM_Workflow({innards})"
 
-    def __init__(self, workflow=DEFAULT_WORKFLOW_NAME, **kwargs):
-        self.workflow_name = workflow
-        self.workflow_args.update(kwargs)
+    def __init__(self, name=None, workflow=DEFAULT_WORKFLOW_NAME, **kwargs):
+        if name is None:
+            raise KeyError("Must provide value for 'name'.")
+        super().__init__(name=name)
+        self.workflow_name.put(workflow)
+        self.workflow_kwargs.update(kwargs)
         self.api = ProcApiFactory.getWorkflowProcApi()
 
     def start_workflow(self, wait=False, timeout=120):
@@ -55,22 +82,22 @@ class DM_Workflow:
 
         @run_in_thread
         def _run_DM_workflow_thread():
-            logger.info("DM workflow starting: workflow: %s", self.workflow_name)
+            logger.info("DM workflow starting: workflow: %s", self.workflow_name.get())
             self.job = self.api.startProcessingJob(
-                workflowOwner=self.owner,
-                workflowName=self.workflow_name,
-                argsDict=self.workflow_args,
+                workflowOwner=self.owner.get(),
+                workflowName=self.workflow_name.get(),
+                argsDict=self.workflow_kwargs,
             )
-            self.job_id = self.job["id"]
+            self.job_id.put(self.job["id"])
             logger.info("DM workflow: %s", self.status)
-            
+
             if wait:
-                logger.info("Waiting for DM workflow: id=%s", self.job_id)
+                logger.info("Waiting for DM workflow: id=%s", self.job_id.get())
                 self.wait_processing(timeout=timeout)
                 logger.info("DM workflow: %s", self.status)
 
-        self.job = "starting"
-        self.job_id = None
+        self.job = ID_JOB_STARTING
+        self.job_id.put(ID_NO_JOB)
         logger.info("start_workflow()")
         _run_DM_workflow_thread()
 
@@ -81,34 +108,33 @@ class DM_Workflow:
         t0 = time.time()
         deadline = t0 + timeout
         while not self.idle and time.time() < deadline:
-            if self.wait_reporting_verbose:
+            if self.wait_reporting_verbose.get():
                 logger.info(
-                    "DM workflow: %s, waiting %.1f s",
-                    self.status, time.time()-t0
+                    "DM workflow: %s, waiting %.1f s", self.status, time.time() - t0
                 )
-            time.sleep(self.wait_reporting_period)
+            time.sleep(self.wait_reporting_period.get())
         if self.idle:
             return
         raise TimeoutError(f"{self} after {timeout} s.")
 
     @property
     def idle(self):
-        if self.job_id is None:
-            st = self.job
+        if self.job_id.get() == ID_NO_JOB:
+            st = self.job  # ID_JOB_STARTING or instance of DM processing job
         else:
             st = self.processing_job.get("status", "unknown")
-        return st in (None, "done")
+        return st in (ID_NO_JOB, "done")
 
     @property
     def processing_job(self):
         """Return the processing job for the current job_id."""
-        if self.job_id is not None:
-            return self.api.getProcessingJobById(self.owner, self.job_id)
+        if self.job_id.get() != ID_NO_JOB:
+            return self.api.getProcessingJobById(self.owner.get(), self.job_id.get())
 
     @property
     def processing_jobs(self):
         """Return the list of processsing jobs."""
-        return self.api.listProcessingJobs(self.owner)
+        return self.api.listProcessingJobs(self.owner.get())
 
     @property
     def status(self):
@@ -118,7 +144,7 @@ class DM_Workflow:
             return
         pdict = pjob.getDictRep()
         report = (
-            f"id={pdict['id'][:7]}"
+            f"id={pdict['id'][:8]}"
             f" {pdict['stage']}"
             f"({pdict['status']})"
             # f" started={pdict['startTimestamp']}"
@@ -128,4 +154,7 @@ class DM_Workflow:
     @property
     def workflows(self):
         """Return the list of workflows."""
-        return self.api.listWorkflows(self.owner)
+        return self.api.listWorkflows(self.owner.get())
+
+
+dm_workflow = DM_Workflow(name="dm_workflow", labels=["DM"])
