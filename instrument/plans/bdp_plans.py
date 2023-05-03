@@ -61,6 +61,7 @@ def demo202305(
         wf_name, 
         wait=dm_wait, 
         timeout=dm_timeout, 
+        # all kwargs after this line are DM argsDict content
         filePath=dm_filePath,
         imageDir=image_dir,
     )
