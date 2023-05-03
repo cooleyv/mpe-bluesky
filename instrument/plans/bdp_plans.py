@@ -13,19 +13,16 @@ logger = logging.getLogger(__name__)
 logger.info(__file__)
 
 from bluesky import plan_stubs as bps
-from bluesky import plans as bp
 import pathlib
 
-# from ..framework.initialize import bec
-# from ..framework import dm_start_workflow
 from ..devices import DM_Workflow
 
-DEFAULT_IMAGE_DIR = "/home/1-id"  # TODO: s1iddata
+DEFAULT_IMAGE_DIR = pathlib.Path("/home/1-id")  # TODO: s1iddata
 
 
 def demo202305(
-    image_dir=DEFAULT_IMAGE_DIR, 
-    fly_scan_time=60, 
+    image_dir=str(DEFAULT_IMAGE_DIR),
+    fly_scan_time=60,
     dm_workflow="example-01",
     dm_filePath="/home/beams/S1IDTEST/.bashrc",
     dm_timeout=180,
@@ -59,7 +56,10 @@ def demo202305(
 
     print("Data collection (simulation) complete.")
     print(f"Start DM workflow: {dm_workflow=}")
-    wf = DM_Workflow(dm_workflow, filePath=dm_filePath)
+    wf = DM_Workflow(dm_workflow, filePath=dm_filePath, imageDir=image_dir)
+    # DM_Workflow code is not a bluesky plan or ophyd,
+    # no need to "yield from ..."
+    # Not yet, at least.
     wf.start_workflow(wait=dm_wait, timeout=dm_timeout)
     if dm_wait:
         while not wf.idle:

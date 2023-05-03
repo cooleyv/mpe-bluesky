@@ -69,8 +69,9 @@ class DM_Workflow:
                 self.wait_processing(timeout=timeout)
                 logger.info("DM workflow: %s", self.status)
 
-        logger.info("start_workflow()")
         self.job = "starting"
+        self.job_id = None
+        logger.info("start_workflow()")
         _run_DM_workflow_thread()
 
     def wait_processing(self, timeout=120):
@@ -92,9 +93,7 @@ class DM_Workflow:
 
     @property
     def idle(self):
-        if self.job is None:
-            st = None
-        elif self.job == "starting":
+        if self.job_id is None:
             st = self.job
         else:
             st = self.processing_job.get("status", "unknown")
@@ -103,7 +102,7 @@ class DM_Workflow:
     @property
     def processing_job(self):
         """Return the processing job for the current job_id."""
-        if self.job not in (None, "starting"):
+        if self.job_id is not None:
             return self.api.getProcessingJobById(self.owner, self.job_id)
 
     @property
