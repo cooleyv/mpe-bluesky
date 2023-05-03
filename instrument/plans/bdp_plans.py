@@ -16,8 +16,9 @@ from bluesky import plan_stubs as bps
 from bluesky import plans as bp
 import pathlib
 
-from ..framework.initialize import bec
-from ..framework import dm_start_workflow
+# from ..framework.initialize import bec
+# from ..framework import dm_start_workflow
+from ..devices import DM_Workflow
 
 DEFAULT_IMAGE_DIR = "/home/1-id"  # TODO: s1iddata
 
@@ -27,6 +28,8 @@ def demo202305(
     fly_scan_time=60, 
     dm_workflow="example-01",
     dm_filePath="/home/beams/S1IDTEST/.bashrc",
+    dm_timeout=180,
+    dm_wait=True,
     md={}
 ):
     """
@@ -56,4 +59,8 @@ def demo202305(
 
     print("Data collection (simulation) complete.")
     print(f"Start DM workflow: {dm_workflow=}")
-    dm_start_workflow(dm_workflow, filePath=dm_filePath)
+    wf = DM_Workflow(dm_workflow, filePath=dm_filePath)
+    wf.start_workflow(wait=dm_wait, timeout=dm_timeout)
+    if dm_wait:
+        while not wf.idle:
+            yield from bps.sleep(1)

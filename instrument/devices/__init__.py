@@ -14,6 +14,7 @@ local, custom Device definitions
 
 # from .area_detector import *
 # from .calculation_records import *
+from .data_management import *
 # from .fourc_diffractometer import *
 # from .ioc_stats import *
 # from .kohzu_monochromator import *
