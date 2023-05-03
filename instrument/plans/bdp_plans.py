@@ -43,7 +43,7 @@ def demo202305(
     Wait to kickoff the DM workflow if a previous workflow is still running.
     """
     image_path = pathlib.Path(image_dir)
-    print(
+    logger.info(
         "In demo202305() plan."
         f"  {image_dir=}"
         f" (exists: {image_path.exists()})"
@@ -51,12 +51,12 @@ def demo202305(
         f" {md=} s"
         )
 
-    print(f"Simulate fly scan for {fly_scan_time} s")
+    logger.info(f"Simulate fly scan for {fly_scan_time} s")
     # TODO: generate run documents?
     yield from bps.sleep(fly_scan_time)
+    logger.info("Data collection (simulation) complete.")
 
-    print("Data collection (simulation) complete.")
-    print(f"Start DM workflow: {dm_workflow=}")
+    logger.info(f"Start DM workflow: {dm_workflow=}")
     wf = DM_Workflow(dm_workflow, filePath=dm_filePath, imageDir=image_dir)
     # DM_Workflow code is not a bluesky plan or ophyd,
     # no need to "yield from ..."
@@ -65,3 +65,4 @@ def demo202305(
     if dm_wait:
         while not wf.idle:
             yield from bps.sleep(1)
+    logger.info("Bluesky plan demo202305() complete.")
