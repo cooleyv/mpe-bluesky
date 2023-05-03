@@ -121,7 +121,7 @@ class DM_Workflow:
             f"id={pdict['id'][:7]}"
             f" {pdict['stage']}"
             f"({pdict['status']})"
-            f" started={pdict['startTimestamp']}"
+            # f" started={pdict['startTimestamp']}"
         )
         return report
 
