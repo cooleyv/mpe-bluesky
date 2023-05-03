@@ -83,8 +83,8 @@ class DM_Workflow:
         while not self.idle and time.time() < deadline:
             if self.wait_reporting_verbose:
                 logger.info(
-                    "DM workflow: elapsed=%.1f s, %s",
-                    time.time()-t0, self.status
+                    "DM workflow: %s, waiting %.1f s",
+                    self.status, time.time()-t0
                 )
             time.sleep(self.wait_reporting_period)
         if self.idle:
