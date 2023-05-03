@@ -48,9 +48,9 @@ class DM_Workflow(Device):
                 ],
                 "dm_workflow_kwargs"
             )
-
     """
 
+    # TODO: revise these names
     workflow_name = Component(Signal, value=DEFAULT_WORKFLOW_NAME)
     # Dictionary structure is not compatible with MongoDB.
     # So, ophyd, in turn, does not support it.
@@ -60,8 +60,18 @@ class DM_Workflow(Device):
     owner = Component(
         Signal, value=str(os.environ["DM_STATION_NAME"]).lower(), kind="config"
     )
-    wait_reporting_period = Component(Signal, value=2, kind="config")
+    wait_loop_period = Component(Signal, value=0.02, kind="config")
+    wait_reporting_period = Component(Signal, value=10, kind="config")
     wait_reporting_verbose = Component(Signal, value=True, kind="config")
+
+    # ophyd objects to record as run data
+    processing_stage_id = Component(Signal, value=ID_NO_JOB)
+    processing_stage_status = Component(Signal, value=ID_NO_JOB)
+    processing_status = Component(Signal, value=ID_NO_JOB)
+    run_time = Component(Signal, value=0)
+    exit_status = Component(Signal, value=ID_NO_JOB, kind="config")
+    error_message = Component(Signal, value="", kind="config")
+    # TODO: stdOut from each stage
 
     def __repr__(self):
         innards = f"'{self.workflow_name.get()}'" f", argsDict={self.workflow_kwargs}"
@@ -88,14 +98,14 @@ class DM_Workflow(Device):
 
         @run_in_thread
         def _run_DM_workflow_thread():
-            logger.info("DM workflow starting: workflow: %s", self.workflow_name.get())
+            logger.info("run DM workflow: %s", self.workflow_name.get())
             self.job = self.api.startProcessingJob(
                 workflowOwner=self.owner.get(),
                 workflowName=wfname,
                 argsDict=wfargs,
             )
             self.job_id.put(self.job["id"])
-            logger.info("DM workflow: %s", self.status)
+            logger.info("DM workflow started: %s", self.status)
 
             if wait:
                 logger.info("Waiting for DM workflow: id=%s", self.job_id.get())
@@ -106,19 +116,30 @@ class DM_Workflow(Device):
         self.job_id.put(ID_NO_JOB)
         logger.info("start_workflow()")
         _run_DM_workflow_thread()
+        self.processing_status.put(self.status)
 
     def wait_processing(self, timeout=120):
         """Wait for the DM workflow to finish."""
         if self.idle:
             return None
         t0 = time.time()
-        deadline = t0 + timeout
-        while not self.idle and time.time() < deadline:
+        timeout_deadline = t0 + timeout
+        report_deadline = t0
+        while not self.idle and time.time() < timeout_deadline:
             if self.wait_reporting_verbose.get():
-                logger.info(
-                    "DM workflow: %s, waiting %.1f s", self.status, time.time() - t0
+                st = self.status
+                report_now = (
+                    st != self.processing_status.get()
+                    or time.time() >= report_deadline
                 )
-            time.sleep(self.wait_reporting_period.get())
+                if report_now :
+                    self.processing_status.put(st)
+                    logger.info(
+                        "DM workflow: %s, waiting %.2f s", self.status, time.time() - t0
+                    )
+                    report_deadline = time.time() + self.wait_reporting_period.get()
+            time.sleep(self.wait_loop_period.get())
+        self.processing_status.put(self.status)
         if self.idle:
             return
         raise TimeoutError(f"{self} after {timeout} s.")
@@ -145,6 +166,8 @@ class DM_Workflow(Device):
     @property
     def processing_job(self):
         """Return the processing job for the current job_id."""
+        # self.job and self.processing are different snapshots of the same process
+        # TODO: refactor to update self.job
         if self.job_id.get() != ID_NO_JOB:
             return self.api.getProcessingJobById(self.owner.get(), self.job_id.get())
 
@@ -160,10 +183,18 @@ class DM_Workflow(Device):
         if pjob is None:
             return
         pdict = pjob.getDictRep()
+        self.processing_stage_id.put(pdict['stage'])
+        self.processing_stage_status.put(pdict['status'])
+
+        self.run_time.put(pdict.get("runTime", "-n/a-"))
+        self.exit_status.put(pdict.get("exitStatus", "-n/a-"))
+        self.error_message.put(pdict.get("stdErr", "-n/a-"))
+
         report = (
             f"id={pdict['id'][:8]}"
             f" {pdict['stage']}"
             f"({pdict['status']})"
+            # f" runTime={pdict['runTime']:.2f}"
             # f" started={pdict['startTimestamp']}"
         )
         return report
