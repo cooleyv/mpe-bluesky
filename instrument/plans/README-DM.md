@@ -9,6 +9,8 @@ Related to BDP activities in 2023-05.
   - [Using the DM package](#using-the-dm-package)
   - [DM python API](#dm-python-api)
   - [Example](#example)
+  - [2023-05-03](#2023-05-03)
+    - [Example stage content](#example-stage-content)
 
 ## Example workflow
 
@@ -102,3 +104,68 @@ Type "help", "copyright", "credits" or "license" for more information.
 >>> <b>api.listWorkflows(owner='bdp')</b>
 [{'name': 'example-01', 'owner': 'bdp', 'stages': {'01-START': {'command': '/bin/date +%Y%m%d%H%M%S', 'outputVariableRegexList': ['(?P<timeStamp>.*)']}, '02-MKDIR': {'command': '/bin/mkdir -p /tmp/workflow.$timeStamp'}, '03-ECHO': {'command
 </pre>
+
+## 2023-05-03
+
+so as far as terminology, DM Workflow class is a template, and ProcessingJob is
+the thing you will run and get back from DM services
+
+for starters you can report final job status and runtime, perhaps startTime and
+endTime keys, and if things fail, you can pull the last stage, and get last
+command error and exit status
+
+Attributes `self.job` and `self.processing_job` are snapshots of the same
+process. It must be updated while the job is running.  This is a *poll-only*
+API.  DM will not provide an update as the processing stage changes. Content
+might be updated faster than 1 second but any stage could take much longer (hour
+or more). It is the same process, the content just grows (every time you call
+it) as the process runs.
+
+top level keys are the most important overall
+
+### Example stage content
+
+```py
+
+    '10-REPEAT': {'command': 'echo "Count: `expr $count + 1`"',
+        'outputVariableRegexList': ['Count: (?P<count>.*)'],
+        'repeatPeriod': 10,
+        'repeatUntil': '"$count" == "$randomNumber"',
+        'maxRepeats': 10,
+        'childProcesses': {'9': {'stageId': '10-REPEAT',
+        'childProcessNumber': 9,
+        'command': 'echo "Count: `expr 0 + 1`"',
+        'workingDir': None,
+        'status': 'done',
+        'submitTime': 1683150326.997442,
+        'startTime': 1683150326.9997125,
+        'endTime': 1683150327.0023093,
+        'runTime': 0.0025968551635742188,
+        'exitStatus': 0,
+        'stdOut': 'Count: 1\n',
+        'stdErr': ''},
+        '10': {'stageId': '10-REPEAT',
+        'childProcessNumber': 10,
+        'command': 'echo "Count: `expr 1 + 1`"',
+        'workingDir': None,
+        'status': 'done',
+        'submitTime': 1683150327.0024977,
+        'startTime': 1683150337.005433,
+        'endTime': 1683150337.008252,
+        'runTime': 0.0028188228607177734,
+        'exitStatus': 0,
+        'stdOut': 'Count: 2\n',
+        'stdErr': ''},
+        '11': {'stageId': '10-REPEAT',
+        'childProcessNumber': 11,
+        'command': 'echo "Count: `expr 2 + 1`"',
+        'workingDir': None,
+        'status': 'done',
+        'submitTime': 1683150337.008671,
+        'startTime': 1683150347.0111377,
+        'endTime': 1683150347.013724,
+        'runTime': 0.00258636474609375,
+        'exitStatus': 0,
+        'stdOut': 'Count: 3\n',
+        'stdErr': ''},
+```
