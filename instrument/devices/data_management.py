@@ -9,7 +9,7 @@ __all__ = """
 
 import logging
 import os
-import pathlib
+import pathlib  # TODO: remove
 import time
 
 logger = logging.getLogger(__name__)
@@ -20,11 +20,11 @@ from apstools.utils import run_in_thread
 from dm import ProcApiFactory
 from ophyd import Component, Device, Signal
 
-DEFAULT_FILE_PATH = pathlib.Path.home() / "BDP" / "etc" / "dm.setup.sh"
-DEFAULT_WORKFLOW_NAME = "example-01"
+DEFAULT_FILE_PATH = pathlib.Path.home() / "BDP" / "etc" / "dm.setup.sh"  # TODO: remove
+DEFAULT_WORKFLOW_NAME = "example-01"  # TODO use ""
 ID_NO_JOB = "not_run"
 ID_JOB_STARTING = "starting"
-DEFAULT_WORKFLOW_ARGS = dict(filePath=str(DEFAULT_FILE_PATH))
+DEFAULT_WORKFLOW_ARGS = dict(filePath=str(DEFAULT_FILE_PATH))  # TODO use {}
 
 
 class DM_Workflow(Device):
@@ -77,16 +77,22 @@ class DM_Workflow(Device):
         self.workflow_kwargs.update(kwargs)
         self.api = ProcApiFactory.getWorkflowProcApi()
 
-    def start_workflow(self, wait=False, timeout=120):
+    def start_workflow(self, name="", wait=False, timeout=120, **kwargs):
         """Kickoff a DM workflow with optional wait & timeout."""
+        if name == "":
+            wfname = self.workflow_name.get()
+        else:
+            wfname = name
+        wfargs = self.workflow_kwargs.copy()
+        wfargs.update(kwargs)
 
         @run_in_thread
         def _run_DM_workflow_thread():
             logger.info("DM workflow starting: workflow: %s", self.workflow_name.get())
             self.job = self.api.startProcessingJob(
                 workflowOwner=self.owner.get(),
-                workflowName=self.workflow_name.get(),
-                argsDict=self.workflow_kwargs,
+                workflowName=wfname,
+                argsDict=wfargs,
             )
             self.job_id.put(self.job["id"])
             logger.info("DM workflow: %s", self.status)
@@ -116,6 +122,17 @@ class DM_Workflow(Device):
         if self.idle:
             return
         raise TimeoutError(f"{self} after {timeout} s.")
+
+    def run_as_plan(self, wf_name, wait=True, timeout=180, **kwargs):
+        from bluesky import plan_stubs as bps
+
+        # TODO: wf_name & kwargs into start metadata
+        # TODO: wf_name & kwargs into document stream
+
+        self.start_workflow(name=wf_name, wait=wait, timeout=timeout, **kwargs)
+        if wait:
+            while not self.idle:
+                yield from bps.sleep(1)
 
     @property
     def idle(self):

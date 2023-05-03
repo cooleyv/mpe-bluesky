@@ -57,12 +57,11 @@ def demo202305(
     logger.info("Data collection (simulation) complete.")
 
     logger.info(f"Start DM workflow: {wf_name=}")
-    dm_workflow.workflow_name.put(wf_name)  # TODO: add to start_workflow()
-    dm_workflow.workflow_kwargs["filePath"] = dm_filePath  # TODO: add to start_workflow()
-    dm_workflow.workflow_kwargs["imageDir"] = image_dir  # TODO: add to start_workflow()
-    # Not a plan, no need to "yield from ..."
-    dm_workflow.start_workflow(wait=dm_wait, timeout=dm_timeout)
-    if dm_wait:
-        while not dm_workflow.idle:
-            yield from bps.sleep(1)
+    yield from dm_workflow.run_as_plan(
+        wf_name, 
+        wait=dm_wait, 
+        timeout=dm_timeout, 
+        filePath=dm_filePath,
+        imageDir=image_dir,
+    )
     logger.info("Bluesky plan demo202305() complete.")
