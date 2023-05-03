@@ -38,7 +38,7 @@ def demo202305(
         RE(demo202305())
 
         # non-default values
-        RE(demo202305("/home/1-id/s1iduser", 2))
+        RE(demo202305(fly_scan_time=2, md=dict(title="BS+DM test")))
 
     Wait to kickoff the DM workflow if a previous workflow is still running.
     """
@@ -52,6 +52,7 @@ def demo202305(
         )
 
     print(f"Simulate fly scan for {fly_scan_time} s")
+    # TODO: generate run documents?
     yield from bps.sleep(fly_scan_time)
 
     print("Data collection (simulation) complete.")
