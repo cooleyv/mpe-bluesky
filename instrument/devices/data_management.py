@@ -120,7 +120,6 @@ class DM_WorkflowConnector(Device):
         self.put_if_different(self.run_time, rep.get("runTime", -1))
         self.put_if_different(self.stage_id, rep.get("stage", NOT_AVAILABLE))
         self.put_if_different(self.status, rep.get("status", NOT_AVAILABLE))
-        # TODO: keys: stdOut, stdErr
 
     @property
     def api(self):
@@ -228,9 +227,6 @@ class DM_WorkflowConnector(Device):
 
         if workflow == "":
             workflow = self.workflow.get()
-
-        # TODO: wf_name & kwargs into start metadata
-        # TODO: wf_name & kwargs into document stream
 
         self.start_workflow(workflow=workflow, timeout=timeout, **kwargs)
         logger.info("plan: workflow started")
