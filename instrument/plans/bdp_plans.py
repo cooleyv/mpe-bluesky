@@ -24,7 +24,7 @@ DEFAULT_IMAGE_DIR = pathlib.Path("/home/1-id")  # TODO: s1iddata
 
 
 # TODO: consider continuous operations
-#   one rule:  
+#   one rule:
 #     Do not submit new DM job until previous one is done.
 #     OK to acquire new data but wait new DM run until previous one is done
 
@@ -52,7 +52,7 @@ def demo202305(
     Wait to kickoff the DM workflow if a previous workflow is still running.
     """
     image_path = pathlib.Path(image_dir)
-    
+
     _md = dict(
         title="BDP demo2305",
         description=(
@@ -99,9 +99,9 @@ def demo202305(
         logger.info(f"Start DM workflow: {wf_name=}")
         yield from bps.mv(dm_workflow.concise_reporting, dm_concise)
         yield from dm_workflow.run_as_plan(
-            wf_name, 
-            wait=dm_wait, 
-            timeout=dm_timeout, 
+            wf_name,
+            wait=dm_wait,
+            timeout=dm_timeout,
             # all kwargs after this line are DM argsDict content
             filePath=dm_filePath,
             imageDir=image_dir,
@@ -115,13 +115,13 @@ def demo202305(
 def xyplot(dataset, xname, yname, title=None):
     """
     Plot the data from the primary stream (above).
-    
+
     ::
-    
+
         xyplot(cat[-1].primary.read(), sim.x.name, sim.y.name)
     """
     import matplotlib.pyplot as plt
-    
+
     x = dataset[xname]
     y = dataset[yname]
     title = title or f"{yname} v. {xname}"
@@ -135,9 +135,9 @@ def xyplot(dataset, xname, yname, title=None):
 def bluesky_md_to_dm(cat, run_ref):
     """
     Contribute a run's metadata to the APS Data Management database.
-    
+
     ::
-    
+
         bluesky_md_to_dm(cat, -1)  # most recent run
     """
     from dm import CatApiFactory
