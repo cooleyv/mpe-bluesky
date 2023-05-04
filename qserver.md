@@ -16,15 +16,15 @@ work-in-progress: *very* basic notes for now
 
 Run in a background screen session.
 
-`./qserver start`
+`./qserver.sh start`
 
 Stop this with
 
-`./qserver stop`
+`./qserver.sh stop`
 
 ### diagnostics and testing
 
-`./qserver run`
+`./qserver.sh run`
 
 ## graphical user interface
 
