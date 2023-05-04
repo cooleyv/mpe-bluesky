@@ -5,9 +5,8 @@ Configure for data collection using bluesky-queueserver.
 import logging
 
 logger = logging.getLogger(__name__)
-
+logger.setLevel(logging.DEBUG)  # allow any log content at this level
 logger.info(__file__)
-print(__file__)
 
 from . import iconfig
 from .epics_signal_config import scan_id_epics

@@ -14,7 +14,7 @@ import os
 import time
 
 logger = logging.getLogger(__name__)
-
+logger.setLevel(logging.DEBUG)  # allow any log content at this level
 logger.info(__file__)
 
 from apstools.utils import run_in_thread

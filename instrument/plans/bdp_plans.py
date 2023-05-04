@@ -2,14 +2,14 @@
 Plans for use by the BDP
 """
 
-__all__ = [
-    "demo202305",
-]
+__all__ = """
+    demo202305
+""".split()
 
 import logging
 
 logger = logging.getLogger(__name__)
-
+logger.setLevel(logging.DEBUG)  # allow any log content at this level
 logger.info(__file__)
 
 from bluesky import plan_stubs as bps
@@ -67,4 +67,4 @@ def demo202305(
         filePath=dm_filePath,
         imageDir=image_dir,
     )
-    logger.info("Bluesky plan demo202305() complete.")
+    logger.info("Bluesky plan demo202305() complete. %s", dm_workflow)
