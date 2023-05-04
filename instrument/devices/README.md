@@ -3,7 +3,7 @@
 The MPE group wants to build an instrument (for measurement) in a dynamic
 way.  The combination of stages, detectors, etc. may change as often as
 every few hours.  The method to configure the instrument should be easy
-to understand and change as well a documented in the data stream and/or
+to understand and change as well as documented in the data stream and/or
 logs, such that analysis can proceed.
 
 An additional consideration is that certain controls, such as sample Y,
