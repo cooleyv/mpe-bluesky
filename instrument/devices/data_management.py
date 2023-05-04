@@ -69,6 +69,7 @@ class DM_WorkflowConnector(Device):
 
     polling_period = Component(Signal, value=0.1, kind="config")
     reporting_period = Component(Signal, value=REPORT_PERIOD_DEFAULT, kind="config")
+    concise_reporting = Component(Signal, value=True, kind="config")
 
     def __repr__(self):
         """Default representation of class instance."""
@@ -133,9 +134,9 @@ class DM_WorkflowConnector(Device):
         """Is DM Processing idle?"""
         return self.status.get() in (NOT_RUN_YET, "done")
 
-    def report_status(self, t_offset=None, concise=True):
+    def report_status(self, t_offset=None):
         """Status report."""
-        if concise:
+        if self.concise_reporting.get():
             t = f"{self.__class__.__name__} {self.name}:"
             t += f" {self.workflow.get()!r}"
             t += f" {self.job_id.get()[:8]!r}"

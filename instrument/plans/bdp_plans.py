@@ -27,6 +27,7 @@ def demo202305(
     dm_filePath="/home/beams/S1IDTEST/.bashrc",
     dm_timeout=180,
     dm_wait=True,
+    dm_concise=True,
     md={}
 ):
     """
@@ -57,6 +58,7 @@ def demo202305(
     logger.info("Data collection (simulation) complete.")
 
     logger.info(f"Start DM workflow: {wf_name=}")
+    yield from bps.mv(dm_workflow.concise_reporting, dm_concise)
     yield from dm_workflow.run_as_plan(
         wf_name, 
         wait=dm_wait, 
