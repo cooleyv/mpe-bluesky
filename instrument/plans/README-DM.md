@@ -11,6 +11,7 @@ Related to BDP activities in 2023-05.
   - [Example](#example)
   - [2023-05-03](#2023-05-03)
     - [Example stage content](#example-stage-content)
+- [Send metadata to DM](#send-metadata-to-dm)
 
 ## Example workflow
 
@@ -168,4 +169,50 @@ top level keys are the most important overall
         'exitStatus': 0,
         'stdOut': 'Count: 3\n',
         'stdErr': ''},
+```
+
+# Send metadata to DM
+
+2023-05-04
+
+```py
+>>> from dm import CatApiFactory
+
+>>> api = CatApiFactory.getRunCatApi()
+
+>>> metadata = {'resource': {'spec': 'AD_HDF5', 'root': '/', 'resource_path': 'clhome/BDP/voyager/adsimdet/2022/08/30/d585f272-dd9b-4ac0-b521_000.h5', 'resource_kwargs': {'frame_per_point': 1}, 'path_semantics': 'posix','uid': '506944a6-7632-4db8-9448-82b258211ed4','run_start': '43044b6e-f6ba-48cb-a975-90d236dcbaaa'},'datum_page': {'resource': '506944a6-7632-4db8-9448-82b258211ed4','datum_id': ['506944a6-7632-4db8-9448-82b258211ed4']}}
+
+>>> runInfo = {'experimentName' : 'bdp-test-01', 'runId' : 'pj01', 'metadata' : metadata}
+
+>>> md = api.addExperimentRun(runInfo)
+
+>>> print(md)
+
+{'experimentName': 'bdp-test-01', 'runId': 'pj01', 'metadata': {'resource': {'spec': 'AD_HDF5', 'root': '/', 'resource_path': 'clhome/BDP/voyager/adsimdet/2022/08/30/d585f272-dd9b-4ac0-b521_000.h5', 'resource_kwargs': {'frame_per_point': 1}, 'path_semantics': 'posix', 'uid': '506944a6-7632-4db8-9448-82b258211ed4', 'run_start': '43044b6e-f6ba-48cb-a975-90d236dcbaaa'}, 'datum_page': {'resource': '506944a6-7632-4db8-9448-82b258211ed4', 'datum_id': ['506944a6-7632-4db8-9448-82b258211ed4']}}, 'id': '63ed2bc18840ea27d37289ae'}
+
+>>> mdl = api.getExperimentRuns('bdp-test-01')
+
+>>> print(mdl)
+
+[{'experimentName': 'bdp-test-01', 'runId': 'pj01', 'metadata':
+```
+
+as
+
+```py
+from dm import CatApiFactory
+
+run = cat[-1]
+experimentName = cat.name  # databroker catalog name
+runId = f"uid_{run.metadata['start']['uid'][:8]}"  # first part of run uid
+runInfo = dict(
+    experimentName=experimentName,
+    runId=runId,
+    metadata={k: getattr(run, k).metadata for k in run}  # all streams
+)
+
+api = CatApiFactory.getRunCatApi()
+md = api.addExperimentRun(runInfo)
+# confirm
+mdl = api.getExperimentRuns(experimentName)
 ```
