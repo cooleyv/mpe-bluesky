@@ -24,6 +24,7 @@ import apstools
 import bluesky
 import bluesky_queueserver
 import databroker
+import dm
 import epics
 import getpass
 import h5py
@@ -41,6 +42,7 @@ USERNAME = getpass.getuser() or "queueserver user"
 
 # useful diagnostic to record with all data
 versions = dict(
+    aps_data_management=dm.__version__,
     apstools=apstools.__version__,
     bluesky=bluesky.__version__,
     bluesky_queueserver=bluesky_queueserver.__version__,
