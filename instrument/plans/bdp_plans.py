@@ -140,15 +140,34 @@ def bluesky_md_to_dm(cat, run_ref):
 
         bluesky_md_to_dm(cat, -1)  # most recent run
     """
+    import pathlib
+    import yaml
     from dm import CatApiFactory
+
+    def catalog_configuration(cat):
+        """Include the catalog configuration details."""
+        cdir = cat.v2.metadata.get("catalog_dir")
+        if cdir is None:
+            return
+
+        db = {}
+        path = pathlib.Path(cdir)
+        for p in path.iterdir():
+            if p.name.endswith(".yml"):
+                cfg = yaml.load(open(p).read(), Loader=yaml.Loader)
+                db.update(cfg["sources"])
+        return db[cat.name]
 
     run = cat[run_ref]
     experimentName = cat.name  # databroker catalog name
     runId = f"uid_{run.metadata['start']['uid'][:8]}"  # first part of run uid
+    metadata={k: getattr(run, k).metadata for k in run}  # all streams
+    metadata["catalog_name"] = cat.name
+    metadata["catalog"] = catalog_configuration(cat)
     runInfo = dict(
         experimentName=experimentName,
         runId=runId,
-        metadata={k: getattr(run, k).metadata for k in run}  # all streams
+        metadata=metadata,
     )
 
     api = CatApiFactory.getRunCatApi()
