@@ -1,15 +1,16 @@
 """
 Connect with APS Data Management workflows.
+
+autosummary?
 """
 
 __all__ = """
-    DM_Workflow
+    DM_WorkflowConnector
     dm_workflow
 """.split()
 
 import logging
 import os
-import pathlib  # TODO: remove
 import time
 
 logger = logging.getLogger(__name__)
@@ -20,156 +21,221 @@ from apstools.utils import run_in_thread
 from dm import ProcApiFactory
 from ophyd import Component, Device, Signal
 
-DEFAULT_FILE_PATH = pathlib.Path.home() / "BDP" / "etc" / "dm.setup.sh"  # TODO: remove
-DEFAULT_WORKFLOW_NAME = "example-01"  # TODO use ""
-ID_NO_JOB = "not_run"
-ID_JOB_STARTING = "starting"
-DEFAULT_WORKFLOW_ARGS = dict(filePath=str(DEFAULT_FILE_PATH))  # TODO use {}
+DM_STATION_NAME = str(os.environ["DM_STATION_NAME"]).lower()
+NOT_AVAILABLE = "-n/a-"
+NOT_RUN_YET = "not_run"
+REPORT_PERIOD_DEFAULT = 10
+REPORT_PERIOD_MIN = 1
+STARTING = "running"
+TIMEOUT_DEFAULT = 180
 
 
-class DM_Workflow(Device):
+class DM_WorkflowConnector(Device):
     """
     Support for the APS Data Management tools.
 
-    The DM workflow dictionary of arguments ()``workflow_kwargs``)
+    The DM workflow dictionary of arguments (``workflow_args``)
     needs special attention.  Python's ``dict`` structure is not
     compatible with MongoDB.  In turn, ophyd does not support it.
-    A custom plan can choose how to use `the `workflow_kwargs`` dictionary:
+    A custom plan can choose how to use `the `workflow_args`` dictionary:
         - use with DM workflow, as planned
-        - add ``workflow_kwargs`` to the start metadata
+        - add ``workflow_args`` to the start metadata
         - write as run stream::
 
             from apstools.devices import make_dict_device
             from apstools.plans import write_stream
 
             yield from write_stream(
-                [
-                    make_dict_device(workflow_kwargs, name="kwargs")
-                ],
-                "dm_workflow_kwargs"
+                [make_dict_device(workflow_args, name="kwargs")],
+                "workflow_args"
             )
+
+    autosummary?
     """
 
-    # TODO: revise these names
-    workflow_name = Component(Signal, value=DEFAULT_WORKFLOW_NAME)
-    # Dictionary structure is not compatible with MongoDB.
-    # So, ophyd, in turn, does not support it.
-    workflow_kwargs = DEFAULT_WORKFLOW_ARGS
-    job = None
-    job_id = Component(Signal, value=ID_NO_JOB, kind="config")
-    owner = Component(
-        Signal, value=str(os.environ["DM_STATION_NAME"]).lower(), kind="config"
-    )
-    wait_loop_period = Component(Signal, value=0.02, kind="config")
-    wait_reporting_period = Component(Signal, value=10, kind="config")
-    wait_reporting_verbose = Component(Signal, value=True, kind="config")
+    job = None  # DM processing job (must update during workflow execution)
+    _api = None  # DM common API
 
-    # ophyd objects to record as run data
-    processing_stage_id = Component(Signal, value=ID_NO_JOB)
-    processing_stage_status = Component(Signal, value=ID_NO_JOB)
-    processing_status = Component(Signal, value=ID_NO_JOB)
+    owner = Component(Signal, value=DM_STATION_NAME, kind="config")
+    workflow = Component(Signal, value="")
+    workflow_args = {}
+
+    job_id = Component(Signal, value=NOT_RUN_YET)
+
+    # exit_status = Component(Signal, value=NOT_RUN_YET)
     run_time = Component(Signal, value=0)
-    exit_status = Component(Signal, value=ID_NO_JOB, kind="config")
-    error_message = Component(Signal, value="", kind="config")
-    # TODO: stdOut from each stage
+    stage_id = Component(Signal, value=NOT_RUN_YET)
+    status = Component(Signal, value=NOT_RUN_YET)
+
+    polling_period = Component(Signal, value=0.1, kind="config")
+    reporting_period = Component(Signal, value=REPORT_PERIOD_DEFAULT, kind="config")
 
     def __repr__(self):
-        innards = f"'{self.workflow_name.get()}'" f", argsDict={self.workflow_kwargs}"
-        if self.job_id.get() != ID_NO_JOB:
-            innards += f", id='{self.job_id.get()}'"
-        return f"DM_Workflow({innards})"
+        """Default representation of class instance."""
+        # fmt: off
+        innards = f"owner='{self.owner.get()}'"
+        innards += f", workflow='{self.workflow.get()}'"
+        for k, v in sorted(self.workflow_args.items()):
+            innards += f", {k}={v!r}"
+        # fmt: on
+        if self.job_id.get() != NOT_RUN_YET:
+            innards += f", id={self.job_id.get()!r}"
+            rt = self.run_time.get()
+            if rt > 0:
+                innards += f", run_time={rt:.2f}"
+            innards += f", stage_id={self.stage_id.get()!r}"
+        innards += f", status={self.status.get()!r}"
+        return f"{self.__class__.__name__}({innards})"
 
-    def __init__(self, name=None, workflow=DEFAULT_WORKFLOW_NAME, **kwargs):
+    def __init__(self, name=None, workflow=None, **kwargs):
+        """Constructor."""
         if name is None:
             raise KeyError("Must provide value for 'name'.")
         super().__init__(name=name)
-        self.workflow_name.put(workflow)
-        self.workflow_kwargs.update(kwargs)
-        self.api = ProcApiFactory.getWorkflowProcApi()
+        if workflow is not None:
+            self.workflow.put(workflow)
+        self.workflow_args.update(kwargs)
 
-    def start_workflow(self, name="", wait=False, timeout=120, **kwargs):
-        """Kickoff a DM workflow with optional wait & timeout."""
-        if name == "":
-            wfname = self.workflow_name.get()
+    def put_if_different(self, signal, value):
+        """Put ophyd signal only if new value is different."""
+        if signal.get() != value:
+            signal.put(value)
+
+    def _update_processing_data(self):
+        """
+        Called periodically (while process runs) to update self.job.
+
+        Also updates certain ophyd signals.
+        """
+        if self.job_id.get() == NOT_RUN_YET:
+            return
+        # fmt: off
+        self.job = self.api.getProcessingJobById(
+            self.owner.get(), self.job_id.get())
+        # fmt: on
+
+        rep = self.job.getDictRep()
+        # self.put_if_different(self.exit_status, rep.get("exitStatus", NOT_AVAILABLE))
+        self.put_if_different(self.run_time, rep.get("runTime", -1))
+        self.put_if_different(self.stage_id, rep.get("stage", NOT_AVAILABLE))
+        self.put_if_different(self.status, rep.get("status", NOT_AVAILABLE))
+        # TODO: keys: stdOut, stdErr
+
+    @property
+    def api(self):
+        """Local copy of DM Processing API object."""
+        if self._api is None:
+            self._api = ProcApiFactory.getWorkflowProcApi()
+        return self._api
+
+    @property
+    def idle(self):
+        """Is DM Processing idle?"""
+        return self.status.get() in (NOT_RUN_YET, "done")
+
+    def report_status(self, t_offset=None, concise=True):
+        """Status report."""
+        if concise:
+            t = f"{self.__class__.__name__} {self.name}:"
+            t += f" {self.workflow.get()!r}"
+            t += f" {self.job_id.get()[:8]!r}"
+            t += f" {self.status.get()!r}"
+            t += f" {self.stage_id.get()!r}"
+            if t_offset is not None:
+                t += f" elapsed: {time.time()-t_offset:.0f}s"
+
+            logger.info(t)
+
         else:
-            wfname = name
-        wfargs = self.workflow_kwargs.copy()
+            self.report_processing_stages()
+
+    def start_workflow(self, workflow="", timeout=TIMEOUT_DEFAULT, **kwargs):
+        """Kickoff a DM workflow with optional wait & timeout."""
+        if workflow == "":
+            workflow = self.workflow.get()
+        else:
+            workflow = workflow
+        if workflow == "":
+            raise AttributeError("Must define a workflow name.")
+        self.put_if_different(self.workflow, workflow)
+
+        wfargs = self.workflow_args.copy()
         wfargs.update(kwargs)
+        t0 = time.time()
+        self._report_deadline = t0
+
+        def update_report_deadline(catch_up=False):
+            period = max(self.reporting_period.get(), REPORT_PERIOD_MIN)
+            if catch_up:  # catch-up (if needed) and set in near future
+                new_deadline = round(self._report_deadline, 2)
+                while time.time() > new_deadline:
+                    new_deadline += period
+            else:
+                new_deadline = time.time() + period
+            self._report_deadline = new_deadline
+
+        def _reporter(*args, **kwargs):
+            update_report_deadline(catch_up=False)
+            self.report_status(t_offset=t0)
+
+        def _cleanup():
+            """Call when DM workflow finishes."""
+            self.stage_id.unsubscribe_all()
+            self.status.unsubscribe_all()
+            if "_report_deadline" in dir(self):
+                del self._report_deadline
 
         @run_in_thread
         def _run_DM_workflow_thread():
-            logger.info("run DM workflow: %s", self.workflow_name.get())
+            logger.info(f"run DM workflow: {self.workflow.get()}")
             self.job = self.api.startProcessingJob(
                 workflowOwner=self.owner.get(),
-                workflowName=wfname,
+                workflowName=workflow,
                 argsDict=wfargs,
             )
             self.job_id.put(self.job["id"])
-            logger.info("DM workflow started: %s", self.status)
+            logger.info(f"DM workflow started: {self}")
+            # wait for workflow to finish
+            deadline = time.time() + timeout
+            while time.time() < deadline and self.status.get() not in ("done"):
+                self._update_processing_data()
+                if time.time() >= self._report_deadline:
+                    _reporter()
+                time.sleep(self.polling_period.get())
 
-            if wait:
-                logger.info("Waiting for DM workflow: id=%s", self.job_id.get())
-                self.wait_processing(timeout=timeout)
-                logger.info("DM workflow: %s", self.status)
+            _cleanup()
+            if self.status.get() in ("done"):
+                logger.info(f"{self}")
+                return
+            self.status.put("timeout")
+            logger.info(f"{self}")
+            raise TimeoutError(
+                f"Workflow {self.workflow.get()!r}" f" did not finish in {timeout} s."
+            )
 
-        self.job = ID_JOB_STARTING
-        self.job_id.put(ID_NO_JOB)
-        logger.info("start_workflow()")
+        self.job = None
+        self.stage_id.put(NOT_RUN_YET)
+        self.job_id.put(NOT_RUN_YET)
+        self.status.put(STARTING)
+        self.stage_id.subscribe(_reporter)
+        self.status.subscribe(_reporter)
         _run_DM_workflow_thread()
-        self.processing_status.put(self.status)
 
-    def wait_processing(self, timeout=120):
-        """Wait for the DM workflow to finish."""
-        if self.idle:
-            return None
-        t0 = time.time()
-        timeout_deadline = t0 + timeout
-        report_deadline = t0
-        while not self.idle and time.time() < timeout_deadline:
-            if self.wait_reporting_verbose.get():
-                st = self.status
-                report_now = (
-                    st != self.processing_status.get()
-                    or time.time() >= report_deadline
-                )
-                if report_now :
-                    self.processing_status.put(st)
-                    logger.info(
-                        "DM workflow: %s, waiting %.2f s", self.status, time.time() - t0
-                    )
-                    report_deadline = time.time() + self.wait_reporting_period.get()
-            time.sleep(self.wait_loop_period.get())
-        self.processing_status.put(self.status)
-        if self.idle:
-            return
-        raise TimeoutError(f"{self} after {timeout} s.")
-
-    def run_as_plan(self, wf_name, wait=True, timeout=180, **kwargs):
+    def run_as_plan(self, workflow="", wait=True, timeout=TIMEOUT_DEFAULT, **kwargs):
+        """Run the DM workflow as a bluesky plan."""
         from bluesky import plan_stubs as bps
+
+        if workflow == "":
+            workflow = self.workflow.get()
 
         # TODO: wf_name & kwargs into start metadata
         # TODO: wf_name & kwargs into document stream
 
-        self.start_workflow(name=wf_name, wait=wait, timeout=timeout, **kwargs)
+        self.start_workflow(workflow=workflow, timeout=timeout, **kwargs)
+        logger.info("plan: workflow started")
         if wait:
             while not self.idle:
-                yield from bps.sleep(1)
-
-    @property
-    def idle(self):
-        if self.job_id.get() == ID_NO_JOB:
-            st = self.job  # ID_JOB_STARTING or instance of DM processing job
-        else:
-            st = self.processing_job.get("status", "unknown")
-        return st in (ID_NO_JOB, "done")
-
-    @property
-    def processing_job(self):
-        """Return the processing job for the current job_id."""
-        # self.job and self.processing are different snapshots of the same process
-        # TODO: refactor to update self.job
-        if self.job_id.get() != ID_NO_JOB:
-            return self.api.getProcessingJobById(self.owner.get(), self.job_id.get())
+                yield from bps.sleep(self.polling_period.get())
 
     @property
     def processing_jobs(self):
@@ -177,32 +243,53 @@ class DM_Workflow(Device):
         return self.api.listProcessingJobs(self.owner.get())
 
     @property
-    def status(self):
-        """Return the job status."""
-        pjob = self.processing_job
-        if pjob is None:
-            return
-        pdict = pjob.getDictRep()
-        self.processing_stage_id.put(pdict['stage'])
-        self.processing_stage_status.put(pdict['status'])
-
-        self.run_time.put(pdict.get("runTime", "-n/a-"))
-        self.exit_status.put(pdict.get("exitStatus", "-n/a-"))
-        self.error_message.put(pdict.get("stdErr", "-n/a-"))
-
-        report = (
-            f"id={pdict['id'][:8]}"
-            f" {pdict['stage']}"
-            f"({pdict['status']})"
-            # f" runTime={pdict['runTime']:.2f}"
-            # f" started={pdict['startTimestamp']}"
-        )
-        return report
-
-    @property
     def workflows(self):
         """Return the list of workflows."""
         return self.api.listWorkflows(self.owner.get())
 
+    def report_processing_stages(self, truncate=40):
+        """
+        Print a table about each stage of the workflow process.
+        """
+        import pyRestTable
 
-dm_workflow = DM_Workflow(name="dm_workflow", labels=["DM"])
+        if self.job is None:
+            return
+
+        wf = self.job["workflow"]
+        stage_keys = "status runTime exitStatus stdOut stdErr".split()
+        table = pyRestTable.Table()
+        table.labels = "stage_id process processTime".split() + stage_keys
+        for stage_id, dstage in wf["stages"].items():
+            childProcesses = dstage.get("childProcesses", {"": {}})
+            for k, v in childProcesses.items():
+                row = [stage_id, k]
+
+                status = v.get("status")
+                if status is None:
+                    processTime = 0
+                else:
+                    submitTime = v.get("submitTime", time.time())
+                    endTime = v.get("endTime", submitTime)  # might be unknown
+                    processTime = max(0, min(endTime - submitTime, 999999))
+                row.append(round(processTime, 3))
+
+                for key in stage_keys:
+                    value = v.get(key, "")
+                    if key in ("runTime"):
+                        value = round(v.get(key, 0), 4)
+                    if key in ("stdOut", "stdErr"):
+                        value = str(value).strip()[:truncate]
+                    row.append(value)
+                table.addRow(row)
+        logger.info(
+            f"{wf['description']!r}"
+            f" {wf['name']!r}"
+            f" {self.job['id'][:8]!r}"
+            f"\n{self!r}"
+            f"\n{table}"
+        )
+
+
+dm_workflow = DM_WorkflowConnector(name="dm_workflow", labels=["DM"])
+# RE(dm_workflow.run_as_plan(workflow="example-01", filePath="/home/beams/S1IDTEST/.bashrc"))
