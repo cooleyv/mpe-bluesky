@@ -118,7 +118,7 @@ def xyplot(dataset, xname, yname, title=None):
 
     ::
 
-        xyplot(cat[-1].primary.read(), sim.x.name, sim.y.name)
+        xyplot(cat[-1].primary.read(), "sim_x", "sim_y")
     """
     import matplotlib.pyplot as plt
 
