@@ -1,10 +1,11 @@
 #!/bin/bash
 
-# manage the bluesky queueserver process in a screen session
+# Manage the bluesky queueserver process in a screen session.
+# Calls _run_qs.sh
 
 #--------------------
 # change the program defaults here
-# DATABROKER_CATALOG=1id_hexm  # defined in _run_qs.sh
+DATABROKER_CATALOG=1id_hexm  # also defined in _run_qs.sh
 DEFAULT_SESSION_NAME="bluesky_queueserver-${DATABROKER_CATALOG}"
 #--------------------
 
