@@ -96,15 +96,19 @@ def demo202305(
             yield from write_stream(sim, "primary")
         logger.info("Data collection (simulation) complete.")
 
+        # TODO: wait if previous workflow still executing
         logger.info(f"Start DM workflow: {wf_name=}")
         yield from bps.mv(dm_workflow.concise_reporting, dm_concise)
         yield from dm_workflow.run_as_plan(
             wf_name,
-            wait=dm_wait,
+            wait=dm_wait,  # TODO:
             timeout=dm_timeout,
             # all kwargs after this line are DM argsDict content
             filePath=dm_filePath,
             imageDir=image_dir,
+            # TODO: numFramesExpected=something,
+            # time acq started
+            # time acq ended
         )
         yield from write_stream([dm_workflow], "dm_workflow")
         logger.info("Bluesky plan demo202305() complete. %s", dm_workflow)
