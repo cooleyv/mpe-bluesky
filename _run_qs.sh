@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Manage the bluesky queueserver.
+# Start the bluesky queueserver.
 
 SHELL_SCRIPT_NAME=${BASH_SOURCE:-${0}}
 if [ -z "$STARTUP_DIR" ] ; then
