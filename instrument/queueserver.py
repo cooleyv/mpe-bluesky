@@ -20,7 +20,7 @@ from .plans import *
 from .utils import *
 from .callbacks import *
 
-from bluesky.plans import *
+# from bluesky.plans import *  # TODO: remove comment after BDP demo
 from bluesky.plan_stubs import sleep
 from ophyd import Device
 from ophyd import Signal
@@ -61,6 +61,8 @@ def print_plans():
     """
     Print the plans in the current global namespace.
     """
+    import inspect
+
     glo = globals().copy()
     # fmt: off
     plans = [

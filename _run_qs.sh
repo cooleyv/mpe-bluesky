@@ -11,7 +11,7 @@ fi
 #--------------------
 # change the program defaults here
 export BDP_CONDA_BASE=/APSshare/miniconda/x86_64
-export BDP_CONDA_ENV=bluesky_2023_2
+export BDP_CONDA_ENV=bluesky_2024_1
 export CONDA_ENV_HOME="${HOME}/.conda/envs"
 export DATABROKER_CATALOG=1id_hexm
 export QS_SERVER_HOST=haydn.xray.aps.anl.gov

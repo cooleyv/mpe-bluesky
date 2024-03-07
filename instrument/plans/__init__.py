@@ -9,4 +9,6 @@ local, custom Bluesky plans (scans) and other functions
 from user.quick_hello import *
 
 from .bdp202403 import *
-from .software_triggering import *
+
+# comment out for BDP demo: 2024-03-07 to 2024-03-13
+#	from .software_triggering import *

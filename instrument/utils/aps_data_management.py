@@ -1,6 +1,14 @@
 """
 APS Data Management utility support.
 
+..  DEVELOPERS NOTE
+    Do not import 'dm' or any of its children at the global
+    level in this file.  This will allow the file to imported
+    in a Python environment that does not have the 'aps-dm-api'
+    package installed.  If any of the functions are called (that 
+    attempt to import from 'dm', those imports will raise exceptions
+    as they are called.)
+
 .. automodule::
 
     ~build_run_metadata_dict
@@ -14,6 +22,7 @@ APS Data Management utility support.
     ~dm_api_proc
     ~dm_file_ready_to_process
     ~dm_get_daqs
+    ~dm_get_experiment_datadir_active_daq
     ~dm_get_experiment_file
     ~dm_get_experiment_path
     ~dm_get_experiments
@@ -29,6 +38,7 @@ APS Data Management utility support.
     ~share_bluesky_metadata_with_dm
     ~ts2iso
     ~validate_experiment_dataDirectory
+    ~wait_dm_upload
     ~SECOND
     ~MINUTE
     ~HOUR
@@ -51,6 +61,7 @@ __all__ = """
     dm_api_proc
     dm_file_ready_to_process
     dm_get_daqs
+    dm_get_experiment_datadir_active_daq
     dm_get_experiment_file
     dm_get_experiment_path
     dm_get_experiments
@@ -67,12 +78,15 @@ __all__ = """
     share_bluesky_metadata_with_dm
     ts2iso
     validate_experiment_dataDirectory
+    wait_dm_upload
     SECOND
     MINUTE
     HOUR
     DAY
     WEEK
     WorkflowCache
+    DEFAULT_UPLOAD_TIMEOUT
+    DEFAULT_UPLOAD_POLL_PERIOD
 """.split()
 
 
@@ -80,6 +94,7 @@ import datetime
 import json
 import logging
 import pathlib
+import time
 from os import environ
 
 import pyRestTable
@@ -102,6 +117,8 @@ DEFAULT_WAIT = True
 DEFAULT_DM_EXPERIMENT_KEYS = """
     id name startDate experimentType experimentStation
 """.split()
+DEFAULT_UPLOAD_TIMEOUT = 1 * MINUTE
+DEFAULT_UPLOAD_POLL_PERIOD = 1 * SECOND
 
 DM_SETUP_FILE = pathlib.Path(iconfig["DM_SETUP_FILE"])
 _dm_env_sourced = False
@@ -327,9 +344,13 @@ def dm_start_daq(experimentName: str, dataDirectory: str, **daqInfo):
         See https://git.aps.anl.gov/DM/dm-docs/-/wikis/DM/Beamline-Services/API-Reference/DAQ-Service#dm.daq_web_service.api.experimentDaqApi.ExperimentDaqApi.startDaq
         for details.
 
+    RETURNS
+    
+    - daqInfo dictionary
+
     """
-    ret_daqInfo = dm_api_daq().startDaq(experimentName, dataDirectory, **daqInfo)
-    return ret_daqInfo.get("id")
+    ret_daqInfo = dm_api_daq().startDaq(experimentName, dataDirectory, daqInfo)
+    return ret_daqInfo
 
 
 def dm_stop_daq(experimentName: str, dataDirectory: str):
@@ -370,8 +391,51 @@ def dm_upload(experimentName: str, dataDirectory: str, **daqInfo):
         See https://git.aps.anl.gov/DM/dm-docs/-/wikis/DM/Beamline-Services/API-Reference/DAQ-Service#dm.daq_web_service.api.experimentDaqApi.ExperimentDaqApi.startDaq
         for details.
 
+    .. see:: The ``wait_dm_upload()`` function in this module.
     """
-    dm_api_daq().upload(experimentName, dataDirectory, **daqInfo)
+    dm_api_daq().upload(experimentName, dataDirectory, daqInfo)
+
+
+def wait_dm_upload(
+    experiment_name: str,
+    experiment_file: str,
+    timeout: float = DEFAULT_UPLOAD_TIMEOUT,
+    poll_period: float = DEFAULT_UPLOAD_POLL_PERIOD,
+):
+    """
+    (bluesky plan) Wait for APS DM data acquisition to upload a file.
+
+    PARAMETERS
+
+    - experiment_name *str*: Name of the APS Data Management experiment.
+    - experiment_file *str* Name (and path) of file  in DM.
+    - timeout *float*: Number of seconds to wait before raising a 'TimeoutError'.
+    - poll_period *float*: Number of seconds to wait before check DM again.
+
+    RAISES
+
+    - TimeoutError: if DM does not identify file within 'timeout' (seconds).
+
+    """
+    from dm import ObjectNotFound
+
+    t0 = time.time()
+    deadline = t0 + timeout
+    yield from bps.null()  # now, it's a bluesky plan
+
+    while time.time() <= deadline:
+        try:
+            # either this succeeds or raises an exception
+            dm_get_experiment_file(experiment_name, experiment_file)
+            return  # if successful
+        except ObjectNotFound:
+            yield from bps.sleep(poll_period)
+
+    raise TimeoutError(
+        f"No such file={experiment_file!r} found"
+        f" in DM {experiment_name=!r}"
+        f" after {time.time()-t0:.1f} s."
+    )
 
 
 # def dm_add_experiment(experiment_name, typeName=None, **kwargs):
@@ -407,10 +471,10 @@ def dm_get_experiment_file(experiment_name: str, experiment_file: str):
 
     RAISES
 
-	- InvalidRequest – in case experiment name or file path have not been provided
-	- AuthorizationError – in case user is not authorized to manage DM station
-	- ObjectNotFound – in case file with a given path does not exist
-	- DmException – in case of any other errors
+        - InvalidRequest – in case experiment name or file path have not been provided
+        - AuthorizationError – in case user is not authorized to manage DM station
+        - ObjectNotFound – in case file with a given path does not exist
+        - DmException – in case of any other errors
     """
     api = dm_api_filecat()
     return api.getExperimentFile(experiment_name, experiment_file)
@@ -632,3 +696,21 @@ def dm_daq_wait_upload_plan(id: str, period: float = DEFAULT_PERIOD):
             f"DM DAQ upload status: {uploadStatus!r}, {id=!r}."
             f"  Processing error message(s): {uploadInfo['errorMessage']}."
         )
+
+
+def dm_get_experiment_datadir_active_daq(experiment_name: str, data_directory: str):
+    """
+    Return the daqInfo dict for the active DAQ, or 'None'.
+    """
+    from dm.common.constants import dmProcessingStatus
+
+    active_statuses = (
+        dmProcessingStatus.DM_PROCESSING_STATUS_PENDING,
+        dmProcessingStatus.DM_PROCESSING_STATUS_RUNNING,
+    )
+    for daq_info in dm_api_daq().listDaqs():
+        if daq_info.get("experimentName") == experiment_name:
+            if daq_info.get("dataDirectory") == data_directory:
+                if daq_info.get("status") in active_statuses:
+                    return daq_info
+    return None

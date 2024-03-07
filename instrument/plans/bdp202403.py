@@ -7,15 +7,22 @@ __all__ = """
     mpe_setup_user
 """.split()
 
+import json
 import logging
 import os
 import pathlib
 
+from apstools.utils import cleanupText
 from ophyd import Signal
 
 from bluesky import plan_stubs as bps
 
+logger = logging.getLogger(__name__)
+logger.setLevel("INFO")
+logger.info(__file__)
+
 from .ad_setup_plans import write_if_new
+from ..devices import DM_WorkflowConnector
 from ..utils import MINUTE
 from ..utils import SECOND
 from ..utils import WEEK
@@ -26,9 +33,8 @@ from ..utils import share_bluesky_metadata_with_dm
 from ..utils import DEFAULT_UPLOAD_TIMEOUT
 from ..utils import DEFAULT_UPLOAD_POLL_PERIOD
 from ..utils import wait_dm_upload
-
-logger = logging.getLogger(__name__)
-logger.info(__file__)
+from ..utils import dm_upload
+from ..utils import dm_get_experiment_datadir_active_daq
 
 DM_EXPERIMENT_NAME = "prj-20240306"  # for testing & development
 DM_WORKFLOW_NAME = "midas-ff"
@@ -50,8 +56,8 @@ DETECTOR_WORKSTATION = f"{DEFAULT_DETECTOR_NAME}-1"
 IOC_AD_DATA_ROOT = "G:/"
 LOCAL_AD_DATA_ROOT = DATA_PATH_LOCAL
 
-TITLE = "BDP_XPCS_demo"  # keep this short, single-word
-DESCRIPTION = "Demonstrate XPCS data acquisition and analysis."
+TITLE = "BDP_MPE_demo"  # keep this short, single-word
+DESCRIPTION = "Demonstrate MPE data acquisition and analysis."
 DEFAULT_RUN_METADATA = {"title": TITLE, "description": DESCRIPTION}
 DEFAULT_REPORTING_PERIOD = 1 * MINUTE  # time between reports about an active DM workflow
 # DEFAULT_WAITING_TIME = 10 * MINUTE  # time limit for bluesky reporting on a workflow
@@ -60,7 +66,7 @@ DEFAULT_WAITING_TIME = 5200 * WEEK  # unlimited (100 years)
 DAQ_UPLOAD_WAIT_PERIOD = 1.0 * SECOND
 
 
-daq_id = Signal(name="daq_id", value=0)
+# daq_info = Signal(name="daq_info", value="")
 det_name = Signal(name="det_name", value=str(DEFAULT_DETECTOR_NAME))
 dm_experiment = Signal(name="dm_experiment", value=str(DM_EXPERIMENT_NAME))
 midas_parameter_file = Signal(
@@ -90,7 +96,7 @@ def mpe_bdp_demo_plan(
     md: dict = DEFAULT_RUN_METADATA,
 ):
     """
-    "Acquire" XPCS image data and run a DM workflow.
+    "Acquire" MPE image data and run a DM workflow.
     """
     from ..utils.aps_data_management import dm_api_daq
     from ..utils.aps_data_management import dm_daq_wait_upload_plan
@@ -165,6 +171,7 @@ def mpe_bdp_demo_plan(
         analysisMachine=analysisMachine,
         num_cpus=num_cpus,
         local_working_dir=local_working_dir,
+        # daqInfo=daq_info.get(),
     )
     _md.update(md)  # user md takes highest priority
 
@@ -232,8 +239,9 @@ def mpe_bdp_demo_plan(
         localWorkingDir=local_working_dir,
     )
 
-    # upload bluesky run metadata to APS DM
-    share_bluesky_metadata_with_dm(experiment_name, workflow_name, run)
+    # No "bluesky" run for this BDP demo
+    # # upload bluesky run metadata to APS DM
+    # share_bluesky_metadata_with_dm(experiment_name, workflow_name, run)
 
     logger.info("Finished: mpe_bdp_demo_plan()")
 
@@ -272,11 +280,11 @@ def mpe_setup_user(
     data_directory = str(DATA_PATH_LOCAL)
 
     # Check DM DAQ is running for this experiment, if not then start it.
-    parms = {
-        "destDirectory": detector_name,
-    }
-    if not dm_isDaqActive(dm_experiment_name):
-        # Need another DAQ if also writing to a different directory (off voyager).
+    logger.info("before dm_isDaqActive")
+    daq_directory = detector_name
+    daq = dm_get_experiment_datadir_active_daq(dm_experiment_name, data_directory)
+    if daq is None:
+        # Need another DAQ if also writing to a different directory.
         # A single DAQ can be used to cover any subdirectories.
         # Anything in them will be uploaded.
         logger.info(
@@ -285,13 +293,33 @@ def mpe_setup_user(
             data_directory,
         )
       
-        id_ = dm_start_daq(dm_experiment_name, data_directory, **parms)
-        daq_id.put(id_)  # save the ID of the new DAQ, will use later
+        daq = dm_start_daq(
+            dm_experiment_name,
+            data_directory,
+            destDirectory=daq_directory
+        )
+        logger.info(
+            "Created DAQ for experiment %r, directory %r",
+            dm_experiment_name,
+            data_directory
+        )
+    else:
+        logger.info(
+            "Found DAQ for experiment %r, directory %r",
+            dm_experiment_name,
+            data_directory
+        )
+    logger.info("DAQ info: %s", daq)
+    # daq_info.put(json.dumps(daq))  # save for later
 
     # Upload parameter file
     midas_parameter_file.put(parameter_file)
     pfile = pathlib.Path(parameter_file)
     if not pfile.exists():
         raise FileNotFoundError(f"Parameter file: {pfile}")
-    parms["experimentFilePath"] = pfile.name
-    dm_upload(dm_experiment_name, str(pfile.parent), **parms)
+    dm_upload(
+        dm_experiment_name,
+        str(pfile.parent),
+        destDirectory=detector_name,
+        experimentFilePath=pfile.name
+    )
