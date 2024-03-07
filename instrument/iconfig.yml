@@ -6,13 +6,17 @@
 # ADSIM_IOC_PREFIX: "ad:"
 # GP_IOC_PREFIX: "gp:"
 
-DATABROKER_CATALOG: &databroker_catalog 1id_hexm
+DATABROKER_CATALOG: &databroker_catalog 1id_hexm  # can change this is assigned a new catalog
 
 # default RunEngine metadata
+# Very important to define this metadata!  If/when the same catalog is used
+# by multiple instruments (1-ID-C, 1-ID,E, ...), this is the information
+# that can identify which instrument collected the run.
+# Without this information, it is extremely complicated to identify which instrument.
 RUNENGINE_METADATA:
   beamline_id: 1-ID-C
   instrument_name: HEXM
-  proposal_id: APSU-bdp2023
+  proposal_id: APSU-bdp2024
   databroker_catalog: *databroker_catalog
 
 # # area detector paths used by training IOC
@@ -30,13 +34,13 @@ USE_PROGRESS_BAR: false
 WRITE_SPEC_DATA_FILES: true
 
 # APS Data Management
-DM_SETUP_FILE: "/home/beams/S1IDTEST/BDP/etc/dm.setup.sh"
+DM_SETUP_FILE: "/home/dm/s1idge3dm/etc/dm.setup.sh"
 
 # ----------------------------------
 
 # Directory to "autosave" the RE.md dictionary (uses PersistentDict)
 # Uncomment and modify to change from the default.
-# RUNENGINE_MD_PATH: /home/USERNAME/Bluesky_RunEngine_md
+RUNENGINE_MD_PATH: /home/beams/S1IDTEST/.config/Bluesky_RunEngine_md/
 
 # override default control layer for ophyd
 # if undefined, defaults to PyEpics

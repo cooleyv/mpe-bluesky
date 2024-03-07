@@ -9,12 +9,23 @@ local, custom Device definitions
 #     # 'ophyd.control_layer' — logs requests issued to the underlying control layer (e.g. pyepics, caproto)
 #     # 'ophyd.event_dispatcher' — issues regular summaries of the backlog of updates from the control layer that are being processed on background threads
 
-# from .aps_source import *
+from .ioc1ide1_motors import *
+from .generic_motors import *
+from .ioc1idc_motors import *
+from .ioc1ide_scalers import *
+from .s1id_shutters import *
+from .s1id_slits import *
+
+# after the above imports
+from .hydra_detectors import *
+
+#### other examples from the template (in bluesky_training)
+from .aps_source import *
 # from .aps_undulator import *
 
 # from .area_detector import *
 # from .calculation_records import *
-from .data_management import *
+# from .data_management import *
 # from .fourc_diffractometer import *
 # from .ioc_stats import *
 # from .kohzu_monochromator import *
