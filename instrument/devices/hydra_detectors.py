@@ -106,7 +106,8 @@ ge1 = _create_detector("GE1:")
 ge2 = _create_detector("GE2:")
 ge3 = _create_detector("GE3:")
 ge4 = _create_detector("GE4:")
-ge5 = _create_detector("GE5:")
+ge5 = None  # as of 2024-03-07
+# ge5 = _create_detector("GE5:")
 
 hydra_ab = HydraABSelectorDevice("1id:ESL4406:1:", name="hydra_ab")
 sseq_enable = EpicsSignal("1id:userStringSeqEnable", name="sseq_enable", string=True)

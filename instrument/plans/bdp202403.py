@@ -8,6 +8,7 @@ __all__ = """
 """.split()
 
 import logging
+import os
 import pathlib
 
 from ophyd import Signal
@@ -17,10 +18,14 @@ from bluesky import plan_stubs as bps
 from .ad_setup_plans import write_if_new
 from ..utils import MINUTE
 from ..utils import SECOND
+from ..utils import WEEK
 from ..utils import build_run_metadata_dict
 from ..utils import dm_api_ds
 from ..utils import dm_api_proc
 from ..utils import share_bluesky_metadata_with_dm
+from ..utils import DEFAULT_UPLOAD_TIMEOUT
+from ..utils import DEFAULT_UPLOAD_POLL_PERIOD
+from ..utils import wait_dm_upload
 
 logger = logging.getLogger(__name__)
 logger.info(__file__)
@@ -33,7 +38,7 @@ ANALYSIS_WORKSTATIONS = """califone polaris""".split()
 BEAMS_PATH = pathlib.Path("/home/beams")
 HOME_PATH = pathlib.Path.home()
 
-# FIXME: What MPE data acquisition directory to watch?
+# This is MPE data acquisition directory to watch.
 DATA_PATH_LOCAL = HOME_PATH / "data"  # for the BDP demo 2024-03
 
 PARAMETER_FILE_LOCAL = HOME_PATH / "ps_shade_au.txt"
@@ -48,9 +53,9 @@ LOCAL_AD_DATA_ROOT = DATA_PATH_LOCAL
 TITLE = "BDP_XPCS_demo"  # keep this short, single-word
 DESCRIPTION = "Demonstrate XPCS data acquisition and analysis."
 DEFAULT_RUN_METADATA = {"title": TITLE, "description": DESCRIPTION}
-DEFAULT_REPORTING_PERIOD = 10 * SECOND  # time between reports about an active DM workflow
-# DEFAULT_WAITING_TIME = 10 * MINUTE  # time limit for bluesky reporting
-DEFAULT_WAITING_TIME = 999_999_999_999 * SECOND  # unlimited (effectively)
+DEFAULT_REPORTING_PERIOD = 1 * MINUTE  # time between reports about an active DM workflow
+# DEFAULT_WAITING_TIME = 10 * MINUTE  # time limit for bluesky reporting on a workflow
+DEFAULT_WAITING_TIME = 5200 * WEEK  # unlimited (100 years)
 # bluesky will raise TimeoutError if DM workflow is not done by DEFAULT_WAITING_TIME
 DAQ_UPLOAD_WAIT_PERIOD = 1.0 * SECOND
 
@@ -63,17 +68,13 @@ midas_parameter_file = Signal(
 )
 
 
-# see: https://github.com/aps-8id-dys/bluesky/blob/main/instrument/plans/bdp_demo.py#L155
 def mpe_bdp_demo_plan(
     title: str = TITLE,
     description: str = DESCRIPTION,
     # detector parameters ----------------------------------------
     detector_name: str = DEFAULT_DETECTOR_NAME,
     acquire_time: float = 0.01,
-    # acquire_period: float = 0.01,
-    # num_exposures: int = 1,
     num_images: int = 100,
-    # num_triggers: int = 1,
     # DM workflow kwargs ----------------------------------------
     analysisMachine: str = "califone",  # or "polaris"
     num_cpus: int = 100,
@@ -83,19 +84,21 @@ def mpe_bdp_demo_plan(
     dm_wait=False,
     dm_reporting_period=DEFAULT_REPORTING_PERIOD,
     dm_reporting_time_limit=DEFAULT_WAITING_TIME,
+    dm_image_file_upload_timeout=DEFAULT_UPLOAD_TIMEOUT,
+    dm_image_file_upload_poll_period=DEFAULT_UPLOAD_POLL_PERIOD,
     # user-supplied metadata ----------------------------------------
     md: dict = DEFAULT_RUN_METADATA,
 ):
     """
-    Acquire XPCS data with the chosen detector and run a DM workflow.
+    "Acquire" XPCS image data and run a DM workflow.
     """
     from ..utils.aps_data_management import dm_api_daq
     from ..utils.aps_data_management import dm_daq_wait_upload_plan
-    from .ad_setup_plans import setup_hdf5_plugin  # FIXME
+    # from .ad_setup_plans import setup_hdf5_plugin  # once AD is used
     
     if detector_name != det_name.get():
         raise ValueError(
-            f"{detector_name=!r} not equal to the steup name:"
+            f"{detector_name=!r} not equal to the setup name:"
             f" 'mpe_setup_user(detector_name={det_name.get()!r})'."
         )
 
@@ -107,94 +110,105 @@ def mpe_bdp_demo_plan(
         )
 
     workflow_name = DM_WORKFLOW_NAME
-
-    det = _pick_area_detector(detector_name)  # FIXME
     experiment_name = dm_experiment.get()
     if len(experiment_name) == 0:
-        raise RuntimeError("Must run xpcs_setup_user() first.")
+        raise RuntimeError("Must run mpe_setup_user() first.")
     experiment = dm_api_ds().getExperimentByName(experiment_name)
     logger.info("DM experiment: %s", experiment_name)
-
-    # FIXME: determine the naming convention for the MPE group
-    # TODO: experiment name is part of the file path?  check SPEC macros
+    
     # 'title' must be safe to use as a file name (no spaces or special chars)
     safe_title = cleanupText(title)
-    data_path = pathlib.Path(_xpcsDataDir(safe_title, num_images))  # FIXME:
-    if data_path.exists():
-        raise FileExistsError(
-            # fmt: off
-            f"Found existing directory '{data_path}'."
-            "  Will not overwrite."
-            # fmt: on
-        )
-    # AD will create this directory if not exists.
-    file_name_base = _xpcsFileNameBase(safe_title, num_images)  # FIXME:
-    yield from setup_hdf5_plugin(
-        det.hdf1, data_path, file_name_base, num_capture=num_images
-    )
+
+    # Not needed for BDP demo.
+    # Later, will need to adapt to MPE group style for area detectors.
+    #    # Q: What is the naming convention for the MPE group?
+    #    # Q: Is experiment name is part of the file path?  check SPEC macros
+    #
+    #    det = _pick_area_detector(detector_name)
+    #    data_path = pathlib.Path(_xpcsDataDir(safe_title, num_images))
+    #    if data_path.exists():
+    #        raise FileExistsError(
+    #            # fmt: off
+    #            f"Found existing directory '{data_path}'."
+    #            "  Will not overwrite."
+    #            # fmt: on
+    #        )
+    #    # AD will create this directory if not exists.
+    #    file_name_base = _xpcsFileNameBase(safe_title, num_images)
+    #    yield from setup_hdf5_plugin(
+    #        det.hdf1, data_path, file_name_base, num_capture=num_images
+    #    )
 
     # _md is for a bluesky open run
-    _md = dict(  # FIXME: edit, revise, prune, augment, etc. (from XPCS)
-        detector_name=detector_name,
-        acquire_time=acquire_time,
-        acquire_period=acquire_period,
-        num_capture=num_images,
-        num_exposures=num_exposures,
-        num_images=num_images,
-        num_triggers=num_triggers,
-        qmap_file=qmap_path.name,
-        owner=dm_api_proc().username,
-        workflow=workflow_name,
+    _md = dict(
         title=title,
         safe_title=safe_title,
         description=description,
-        header=xpcs_header.get(),
+        # detector parameters ----------------------------------------
+        detector_name=detector_name,
+        acquire_time=acquire_time,
+        num_images=num_images,
+        # DM workflow kwargs ----------------------------------------
+        owner=dm_api_proc().username,
+        workflow=workflow_name,
+        # internal kwargs ----------------------------------------
+        dm_concise=dm_concise,
+        dm_wait=dm_wait,
+        dm_reporting_period=dm_reporting_period,
+        dm_reporting_time_limit=dm_reporting_time_limit,
+        dm_image_file_upload_timeout=dm_image_file_upload_timeout,
+        dm_image_file_upload_poll_period=dm_image_file_upload_poll_period,
     )
-    _md = build_run_metadata_dict(  # FIXME:
+    _md = build_run_metadata_dict(
         _md,
         # ALL following kwargs are stored under RE.md["data_management"]
-        # TODO: more?
         analysisMachine=analysisMachine,
+        num_cpus=num_cpus,
+        local_working_dir=local_working_dir,
     )
     _md.update(md)  # user md takes highest priority
 
+    # Rule: at most one workflow can running.
+    # DM workflow engine configuration is limiting to one job.
     dm_workflow = DM_WorkflowConnector(name="dm_workflow")
+    # fmt: off
     yield from bps.mv(
-        dm_workflow.concise_reporting,
-        dm_concise,
-        dm_workflow.reporting_period,
-        dm_reporting_period,
+        dm_workflow.concise_reporting, dm_concise,
+        dm_workflow.reporting_period, dm_reporting_period,
     )
+    # fmt: on
 
-    # TODO: "data acquisition"
-    # copy (?hard link?) the 12GB file to DATA_PATH_LOCAL
-    # note: 209 s to copy
-    # note: 0.009 s to hard link
-    # note: 0.009 s to soft link
-
-    # before acquisition: EXAMPLE_DATA_FILE_LOCAL
-
-    # after acquisition:
-    # detector_file = det.hdf1.full_file_name.get()
+    # ------------------------------------------------------------------
+    # "data acquisition" for the BDP demo:  link image file to HOME/data/
+    # note: 209 s to copy 12GB file from HOME to HOME/data
+    # note: 0.0090 s to hard link
+    # note: 0.0093 s to soft link
+    if not EXAMPLE_DATA_FILE_LOCAL.exists():
+        raise FileNotFoundError(
+            f"Example image file {EXAMPLE_DATA_FILE_LOCAL} not found!"
+        )
     detector_file = DATA_PATH_LOCAL / EXAMPLE_DATA_FILE_LOCAL.name
+    if detector_file == EXAMPLE_DATA_FILE_LOCAL:
+        raise ValueError(
+            f"Cannot link {EXAMPLE_DATA_FILE_LOCAL} to {detector_file}."
+        )
+    if detector_file.exists():
+        detector_file.unlink()
 
-    # TODO: wait for DAQ to upload this SPECIFIC FILE before launching the workflow
-    # Needs a new function.  Test the new function with small files.
-    # dm_get_experiment_file(experimentName, filename)
-    # Polling loop:
-    #    Need DAQ's ID to get the number of files that have been uploaded.
-    #    Check that list for this file.
-    #    Timeout is entirely possible.
-    #    DAQ status could advise.
-    #    Ask the experiment if this file is part of the experiment.
-    # https://git.aps.anl.gov/search?search=getExperimentFile&nav_source=navbar&project_id=885&group_id=198&scope=wiki_blobs
-    """
-    def getExperimentFile(self, experimentName, experimentFilePath):
+    # (hard) link the example image file to the detector output directory
+    os.link(str(EXAMPLE_DATA_FILE_LOCAL), str(detector_file))
+    # ------------------------------------------------------------------
 
-    FileCatApi
+    # after acquisition with area detector:
+    # detector_file = det.hdf1.full_file_name.get()
 
-        :raises ObjectNotFound: in case file with a given path does not exist
-    """
+    # Wait for DAQ to upload detector_file before launching workflow.
+    yield from wait_dm_upload(
+        dm_experiment.get(),
+        f"{det_name.get()}/{detector_file.name}",
+        timeout=dm_image_file_upload_timeout,
+        poll_period=dm_image_file_upload_poll_period,
+    )
 
     #
     # *** Start the APS Data Management workflow. ***
@@ -239,7 +253,7 @@ def mpe_setup_user(
     - parameter_file *str*: MIDAS parameter file. (Full path on bluesky workstation.)
     - detector_name *str*: Hard-coded for the demo to be 'ge3'.
 
-    .. note:: Set ``file_number=-1`` to continue with current HDF5 file numbering.
+    # with AD (later), Set ``file_number=-1`` to continue with current HDF5 file numbering.
     """
     from ..utils import dm_isDaqActive
     from ..utils import dm_start_daq
@@ -281,5 +295,3 @@ def mpe_setup_user(
         raise FileNotFoundError(f"Parameter file: {pfile}")
     parms["experimentFilePath"] = pfile.name
     dm_upload(dm_experiment_name, str(pfile.parent), **parms)
-
-    # TODO: What else?
