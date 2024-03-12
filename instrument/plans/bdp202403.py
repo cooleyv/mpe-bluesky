@@ -204,6 +204,8 @@ def mpe_bdp_demo_plan(
 
     # (hard) link the example image file to the detector output directory
     os.link(str(EXAMPLE_DATA_FILE_LOCAL), str(detector_file))
+    # For the demo, update the time stamp so DAQ will see the file is new.
+    detector_file.touch()
     # ------------------------------------------------------------------
 
     # after acquisition with area detector:

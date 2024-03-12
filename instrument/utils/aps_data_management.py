@@ -117,8 +117,8 @@ DEFAULT_WAIT = True
 DEFAULT_DM_EXPERIMENT_KEYS = """
     id name startDate experimentType experimentStation
 """.split()
-DEFAULT_UPLOAD_TIMEOUT = 1 * MINUTE
-DEFAULT_UPLOAD_POLL_PERIOD = 1 * SECOND
+DEFAULT_UPLOAD_TIMEOUT = 10 * MINUTE
+DEFAULT_UPLOAD_POLL_PERIOD = 30 * SECOND
 
 DM_SETUP_FILE = pathlib.Path(iconfig["DM_SETUP_FILE"])
 _dm_env_sourced = False
