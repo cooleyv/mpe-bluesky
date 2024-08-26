@@ -1,0 +1,1 @@
+{'tomo': {'axis': 'x', 'in': 0, 'out': 10, 'units': 'mm'}, 'sample': {'axis': 'x', 'in': 0, 'out': 11, 'units': 'mm'}, 'shield': {'axis': 'x', 'in': 1, 'out': 6, 'units': 'mm'}}

@@ -14,8 +14,8 @@
 
   ```bash
   queue-monitor \
-  --zmq-control-addr tcp://haydn.xray.aps.anl.gov:60615 \
-  --zmq-info-addr tcp://haydn.xray.aps.anl.gov:60625 &
+  --zmq-control-addr tcp://kurtag.xray.aps.anl.gov:60615 \
+  --zmq-info-addr tcp://kurtag.xray.aps.anl.gov:60625 &
   ```
 
 <!--
@@ -28,16 +28,16 @@ usage: queue-monitor \
   Watch the QS console from a terminal session:
 
   ```bash
-  qserver-console-monitor --zmq-info-addr tcp://haydn.xray.aps.anl.gov:60625
+  qserver-console-monitor --zmq-info-addr tcp://kurtag.xray.aps.anl.gov:60625
   ```
 
-- haydn: QS (queueserver) server
+- kurtag: QS (queueserver) server
   
   ```bash
   ./qserver.sh start
   ```
 
-- kurtag: `git` and `conda` activities
+- kurtag: `git` and `conda` activities (need an external workstation, not kurtag)
 - erkel: data processing
 
 ## CAUTION

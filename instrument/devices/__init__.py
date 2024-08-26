@@ -11,34 +11,27 @@ local, custom Device definitions
 
 from .data_management import *
 
-# comment out for BDP demo: 2024-03-07 to 2024-03-13
-#	from .ioc1ide1_motors import *
-#	from .generic_motors import *
-#	from .ioc1idc_motors import *
-#	from .ioc1ide_scalers import *
-#	from .s1id_shutters import *
-#	from .s1id_slits import *
-#
-#	# after the above imports
-#	from .hydra_detectors import *
-#
-#	#### other examples from the template (in bluesky_training)
-#	from .aps_source import *
+#import generic devices 
+from .generic_motors import *
+from .ad_plugin_classes import *
+from .ad_make_dets import *
+from .ad_make_dets import *
 
-# from .aps_undulator import *
+#import motor devices
+from .s1idc_motors import *
+from .s1ide_motors import *
+#from .s1id_shutters import *
+from .s1id_slits import *
 
-# from .area_detector import *
-# from .calculation_records import *
-# from .data_management import *
-# from .fourc_diffractometer import *
-# from .ioc_stats import *
-# from .kohzu_monochromator import *
-# from .motors import *
-# from .noisy_detector import *
-# from .scaler import *
-# from .shutter_simulator import *
-# from .simulated_fourc import *
-# from .simulated_kappa import *
-# from .slits import *
-# from .sixc_diffractometer import *
-# from .temperature_signal import *
+#import soft devices
+from .s1id_FPGAs import *
+#from .pso_fly_device import *
+
+#import measurement devices
+#from .s1ide_scalers import *
+#from .flir_oryx import *
+#from .ge_panels import *
+# from .retiga import *
+# from .pixiradv2 import *
+# from .pointgrey import *
+# from .varex import *

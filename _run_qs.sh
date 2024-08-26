@@ -14,7 +14,7 @@ export BDP_CONDA_BASE=/APSshare/miniconda/x86_64
 export BDP_CONDA_ENV=bluesky_2024_1
 export CONDA_ENV_HOME="${HOME}/.conda/envs"
 export DATABROKER_CATALOG=1id_hexm
-export QS_SERVER_HOST=haydn.xray.aps.anl.gov
+export QS_SERVER_HOST=kurtag.xray.aps.anl.gov
 export USER_GROUP_PERMISSIONS_FILE="${STARTUP_DIR}/user_group_permissions.yaml"
 export USER_GROUP_PERMISSIONS_RELOAD=ON_STARTUP
 #--------------------

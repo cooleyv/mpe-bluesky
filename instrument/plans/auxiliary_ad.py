@@ -1,116 +1,49 @@
-"""
-Bluesky plans to setup various Area Detectors for acquisition.
+""" 
+Plan stubs for creating, configuring, or modifying area detectors. 
 """
 
-__all__ = """
-    ad_acquire_setup
-    setup_hdf5_plugin
-    write_if_new
-    DetectorStateError
-    HDF5PluginError
-""".split()
+all = [
+    "configure_tiff1",
+]
 
 import logging
 import pathlib
 
-from apstools.devices import AD_EpicsFileNameHDF5Plugin
-from ophyd import Kind
+def check_temp(): ...
 
-from bluesky import plan_stubs as bps
-
-# from ..devices import eiger4M
-
-logger = logging.getLogger(__name__)
-logger.info(__file__)
+def choose_detector():...
 
 
-
-
-
-class DetectorStateError(RuntimeError):
-    """For custom errors in this module."""
-
-
-class HDF5PluginError(RuntimeError):
-    """An error with configuration of the HDF5 plugin."""
-
-
-def ad_acquire_setup(
-    det,  # area detector object
-    acquire_time: float = 0.01,
-    acquire_period: float = 0.01,
-    num_capture: int = 1,
-    num_exposures: int = 1,
-    num_images: int = 1_000,
-    num_triggers: int = 1,
-    path="",  # str or pathlib.Path
+def configure_tiff1(
+    det,
+    create_directory = -5,
+    temp_suffix = "",
+    file_template = '%s%s_%6.6d.tiff',
+    auto_save = 'Yes',
+    write_mode = 'Single'
 ):
-    """
-    Prepare any area detector for the next acquisition(s).
-
-    Each parameter should have a defined type and default value, for use in the
-    bluesky queueserver.  These parameters should be copied to the user-facing
-    plan that appears in the queueserver.
-    """
-    cam = det.cam
-    hdf = det.hdf1
-
-    # Make the settings.
-    settings = {
-        cam.acquire_time: acquire_time,
-        cam.acquire_period: acquire_period,
-        cam.num_exposures: num_exposures,
-        cam.num_images: num_images,
-    }
-    for signal, value in settings.items():
-        if signal.get() != value:  # write only if different
-            yield from bps.abs_set(signal, value)
-
-    # Python attributes (not ophyd Signals)
-    # allow for a pathlib object
-    hdf.write_path_template = hdf.read_path_template = f"{path}/"
+    
+    """Plan stub for configuring peripheral tiff1 PVs.
+    These include PVs usually set to a default and not normally set by the user during a scan
+    (e.g., not file name or file folder)."""
 
 
-# def eiger4M_acquire_setup(  # TODO: (actually, refactor for GE detectors)
-#     det,  # area detector object
-#     # acquire_time: float = 0.01,
-#     # acquire_period: float = 0.01,
-#     # num_capture: int = 1,
-#     # num_exposures: int = 1,
-#     # num_images: int = 1_000,
-#     num_triggers: int = 1,
-#     # path="",  # str or pathlib.Path
-# ):
-#     """
-#     Prepare the Eiger4M detector for the next acquisition(s).
-#     """
-#     raise RuntimeError("Eiger4M detector not used by MPE group.")
-#     det = eiger4M
-#     cam = det.cam
-
-#     yield from write_if_new(cam.num_triggers, num_triggers)
-
-#     # Check the configuration of the detector now.
-#     attrs = {
-#         "data_source": (2, "Stream"),
-#         "fw_enable": (0, "Disable"),
-#         "fw_state": ["disabled"],
-#         "initialize": (0, "Done"),
-#         "stream_decompress": (0, "Disable"),
-#         "stream_enable": (1, "Enable"),
-#         "stream_state": ["ready"],
-#         "trigger_mode": (0, "Internal Series"),  # values specific to Eiger4M
-#     }
-
-#     # Raise DetectorStateError on the first fail.
-#     for k, v in attrs.items():
-#         if getattr(cam, k).get() not in v:
-#             raise DetectorStateError(
-#                 f"{det.name} PV {getattr(cam, k).pvname!r} not in {v!r}"
-#             )
+    yield from bps.mv(
+        det.tiff1.create_directory, create_directory,
+        det.tiff1.temp_suffix, temp_suffix, 
+        det.tiff1.file_template, file_template,
+        det.tiff1.auto_save, auto_save, 
+        det.tiff1.write_mode, write_mode
+    )
 
 
-def setup_hdf5_plugin(
+
+def write_if_new(signal, value):
+    """Write an ophyd signal if it has a new value."""
+    if value is not None and signal.get() != value:
+        yield from bps.mv(signal, value)
+
+def config_hdf5_plugin(
     hdf,  # Area Detector's HDF5 plugin
     write_path: (str, pathlib.Path),  # Directory (as seen from the EPICS IOC)
     file_name: str,

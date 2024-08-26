@@ -3,9 +3,6 @@
 # configuration for the instrument package
 # simple key:value pairs
 
-# ADSIM_IOC_PREFIX: "ad:"
-# GP_IOC_PREFIX: "gp:"
-
 DATABROKER_CATALOG: &databroker_catalog 1id_hexm  # can change this is assigned a new catalog
 
 # default RunEngine metadata
@@ -19,33 +16,62 @@ RUNENGINE_METADATA:
   proposal_id: APSU-bdp2024
   databroker_catalog: *databroker_catalog
 
-# # area detector paths used by training IOC
-# # These are examples for other use of this instrument.
-# # see: https://bcda-aps.github.io/apstools/latest/examples/de_0_adsim_hdf5_basic.html#File-Directories
-# AD_IMAGE_DIR: "adsimdet/%Y/%m/%d"
-# AD_MOUNT_PATH: /tmp
-# BLUESKY_MOUNT_PATH: /tmp/docker_ioc/iocad/tmp
+# Directory to "autosave" the RE.md dictionary (uses PersistentDict)
+# Uncomment and modify to change from the default.
+RUNENGINE_MD_PATH: /home/beams/S1IDTEST/.config/Bluesky_RunEngine_md/
 
-# # permissions
+#APS Data management
+DM_SETUP_FILE: "/home/dm/s1idge3dm/etc/dm.setup.sh"
+
+#Experimental information (specific to BTR/PI)
+EXPERIMENT:
+
+  #Experimental folder appended to save paths
+  SAVE_DIRECTORY: mpe_jul24 
+
+  #Specify HDF5 configuration files
+  LAYOUT_FILE: /home/beams/S1IDUSER/mnt/s1b/bluesky_dev/hdf5_layout/Varex_layot.xml
+  ATTRIBUTE_FILE: /home/beams/S1IDUSER/mnt/s1b/bluesky_dev/hdf5_layout/Varex_attributes_6IDD.xml
+
+  #Select SMS
+  SMS: sms_aero           #options: sms_aero, sms_lab, mts, owis, rams3 
+
+  #Select detector(s) and DMS(s)
+  DETECTORS: 
+
+    DATA_COLLECTORS:
+      imaging: null       #options: null, point_grey, grasshopper, retiga_tomo
+      scattering: null    #options: null, hydra, GE5, pilatus, varex, retiga_nf, oryx
+      saxs: null          #options: null, pixirad
+      other: null         #options: null, dic
+
+    MOTOR_STACKS:
+      imaging: tomo_e     #options: null, tomo_b, tomo_c, tomo_us_e, tomo_ds_e
+      scattering: null    #options: null, hydra_positioner, det2_c, det2_e, nearfield, vff
+      saxs: null          #options: null, saxs
+      other: null         #options: null, four_circle
+
+    HYDRA_PANELS: [ge1, ge2, ge3, ge4]  #order doesn't matter
+
+  #Select sample environment
+  SAMPLE_ENV: null        #options: null, cmu_furnace, rf_tube, am 
+
+  #MONITOR_CHANNELS #potentially for flyscan 
+
+ANALYSIS: 
+  analysis_subdir: analysis/hedm/ff_rec
+  analysis_workstation: califone
+  
+  #MIDAS parameter file
+  parameter_file: ps_shade_au.txt
+  
+
+#Permissions
 # ALLOW_AREA_DETECTOR_WARMUP: true
 # ENABLE_AREA_DETECTOR_IMAGE_PLUGIN: true
 # ENABLE_CALCS: true
 USE_PROGRESS_BAR: false
 WRITE_SPEC_DATA_FILES: true
-
-# APS Data Management
-DM_SETUP_FILE: "/home/dm/s1idge3dm/etc/dm.setup.sh"
-
-# ----------------------------------
-
-# Directory to "autosave" the RE.md dictionary (uses PersistentDict)
-# Uncomment and modify to change from the default.
-RUNENGINE_MD_PATH: /home/beams/S1IDTEST/.config/Bluesky_RunEngine_md/
-
-# override default control layer for ophyd
-# if undefined, defaults to PyEpics
-# OPHYD_CONTROL_LAYER: PyEpics
-# OPHYD_CONTROL_LAYER: caproto
 
 # Uncomment any of these to override the defaults
 LOGGING:
