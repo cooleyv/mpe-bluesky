@@ -1,5 +1,5 @@
 # Bluesky Instrument for MPE
-# Includes 20-ID and 1-ID
+# MPE includes 1-ID and HEXM (20-ID)
 
 ## Quick Reference
 
