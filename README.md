@@ -1,4 +1,4 @@
-# Bluesky Instrument for HEXM
+# Bluesky Instrument for MPE
 
 ## Quick Reference
 
