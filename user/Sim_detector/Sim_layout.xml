@@ -1,0 +1,124 @@
+<?xml version="1.0" standalone="no" ?>
+<!-- Last update: 20240708 (AC) -->
+<hdf5_layout>
+  <global name="detector_data_destination" ndattribute="SaveDest" />
+    <group name="exchange">
+      <dataset name="data" source="detector"/>
+        <attribute name="description" source="constant" value="Raw Data" type="string" />
+        <attribute name="axes" source="constant" value="theta:y:x" type="string" />
+        <attribute name="units" source="constant" value="counts" type="string" />
+      <dataset name="dark" source="detector"/>
+        <attribute name="description" source="constant" value="dark field" type="string" />
+        <attribute name="axes" source="constant" value="theta:y:x" type="string" />
+        <attribute name="units" source="constant" value="counts" type="string" />
+      <dataset name="bright" source="detector"/>
+        <attribute name="description" source="constant" value="bright field, background" type="string" />
+        <attribute name="axes" source="constant" value="theta:y:x" type="string" />
+        <attribute name="units" source="constant" value="counts" type="string" />
+    </group><!-- exchange -->
+
+    <group name="measurement">
+      <group name="instrument">
+        <group name="BCS">
+          <group name="slits_US">
+            <dataset name="H_size" source="ndattribute" ndattribute="USSlitsHSize" when="OnFileClose"> 
+              <attribute name="units" source="constant" value="mm" type="string"/>
+            </dataset>
+            <dataset name="V_size" source="ndattribute" ndattribute="USSlitsVSize" when="OnFileClose"> 
+              <attribute name="units" source="constant" value="mm" type="string"/>
+            </dataset>
+            <dataset name="H_cen" source="ndattribute" ndattribute="USSlitsHCenter" when="OnFileClose"> 
+              <attribute name="units" source="constant" value="mm" type="string"/>
+            </dataset>
+            <dataset name="V_cen" source="ndattribute" ndattribute="USSlitsVCenter" when="OnFileClose"> 
+              <attribute name="units" source="constant" value="mm" type="string"/>
+            </dataset>
+          </group><!-- slits US -->
+          <group name="slits_DS">
+            <dataset name="H_size" source="ndattribute" ndattribute="DSSlitsHSize" when="OnFileClose"> 
+              <attribute name="units" source="constant" value="mm" type="string"/>
+            </dataset>
+            <dataset name="V_size" source="ndattribute" ndattribute="DSSlitsVSize" when="OnFileClose"> 
+              <attribute name="units" source="constant" value="mm" type="string"/>
+            </dataset>
+            <dataset name="H_cen" source="ndattribute" ndattribute="DSSlitsHCenter" when="OnFileClose"> 
+              <attribute name="units" source="constant" value="mm" type="string"/>
+            </dataset>
+            <dataset name="V_cen" source="ndattribute" ndattribute="DSSlitsVCenter" when="OnFileClose"> 
+              <attribute name="units" source="constant" value="mm" type="string"/>
+            </dataset>
+          </group><!-- slits DS -->
+        </group><!-- BCS -->
+        <group name="SMS">
+            <dataset name="aero" source="ndattribute" ndattribute="Aero"> 
+              <attribute name="units" source="constant" value="degree" type="string"/>
+            </dataset>
+            <dataset name="samX" source="ndattribute" ndattribute="samX" when="OnFileClose"> 
+              <attribute name="units" source="constant" value="mm" type="string" />
+            </dataset>            
+            <dataset name="samY" source="ndattribute" ndattribute="samY" when="OnFileClose"> 
+              <attribute name="units" source="constant" value="mm" type="string" />
+            </dataset>            
+            <dataset name="samZ" source="ndattribute" ndattribute="samZ" when="OnFileClose"> 
+              <attribute name="units" source="constant" value="mm" type="string" />
+            </dataset>            
+            <dataset name="samRx" source="ndattribute" ndattribute="samRx" when="OnFileClose"> 
+              <attribute name="units" source="constant" value="degree" type="string" />
+            </dataset>            
+            <dataset name="samRz" source="ndattribute" ndattribute="samRz" when="OnFileClose"> 
+              <attribute name="units" source="constant" value="degree" type="string" />
+            </dataset>            
+            <dataset name="aeroX" source="ndattribute" ndattribute="aeroX" when="OnFileClose"> 
+              <attribute name="units" source="constant" value="mm" type="string" />
+            </dataset>            
+            <dataset name="aeroX_dail" source="ndattribute" ndattribute="aeroXDial" when="OnFileClose"> 
+              <attribute name="units" source="constant" value="mm" type="string" />
+            </dataset>            
+        </group><!-- SMS -->
+        <group name="Detector">
+            <dataset name="detX" source="ndattribute" ndattribute="FFX" when="OnFileOpen"> 
+              <attribute name="units" source="constant" value="mm" type="string"/>
+            </dataset>
+            <dataset name="detY" source="ndattribute" ndattribute="FFY" when="OnFileOpen"> 
+              <attribute name="units" source="constant" value="mm" type="string"/>
+            </dataset>
+            <dataset name="detZ" source="ndattribute" ndattribute="FFZ" when="OnFileOpen"> 
+              <attribute name="units" source="constant" value="mm" type="string"/>
+            </dataset>
+        </group><!-- Detector-->
+      </group><!-- instrument -->
+      <group name="process">
+        <dataset name="start_date" source="ndattribute" ndattribute="DateTimeStart" when="OnFileOpen"/>
+        <dataset name="end_date" source="ndattribute" ndattribute="DateTimeEnd" when="OnFileClose"/>
+        <group name="scan_parameters">
+          <dataset name="stage" source="ndattribute" ndattribute="FlyMotorName" when="OnFileOpen"/>
+          <dataset name="start" source="ndattribute" ndattribute="FlyStartPos" when="OnFileOpen">
+                <attribute name="units" source="constant" value="degree" type="string" />
+          </dataset>
+          <dataset name="step" source="ndattribute" ndattribute="FlyScanDelta" when="OnFileOpen">
+                <attribute name="units" source="constant" value="degree" type="string" />
+          </dataset>
+          <dataset name="end" source="ndattribute" ndattribute="FlyEndPos" when="OnFileOpen">
+                <attribute name="units" source="constant" value="degree" type="string" />
+          </dataset>
+          <dataset name="speed" source="ndattribute" ndattribute="FlySlewSpeed" when="OnFileOpen">
+                <attribute name="units" source="constant" value="degree/sec" type="string" />
+          </dataset>
+          <dataset name="steptime" source="ndattribute" ndattribute="FlyDeltaTime" when="OnFileOpen">
+                <attribute name="units" source="constant" value="sec" type="string" />
+          </dataset>          
+        </group><!-- scan_parameters -->
+      </group><!-- process -->
+    </group><!-- measurement -->
+
+    <!-- https://areadetector.github.io/master/ADCore/NDFileHDF5.html#ndarray-attributes
+         If the location of an NDArray attribute dataset is not defined in the XML layout file
+         then the dataset will appear in the group that has the property ndattr_default=”true”.
+         If there is no group with that property then the dataset will appear in the root
+         group. If the root group has the property auto_ndattr_default=”false” then datasets
+         that are not explicitly defined in the XML layout file will not appear in the HDF5 file at all.
+    -->
+    <!-- /WM(WasteManagement) a garbage can to dump attributes not specified in layout.xml -->
+    <group name="WM" ndattr_default="true">
+    </group><!-- /WasteManagement -->
+</hdf5_layout>

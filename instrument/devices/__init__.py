@@ -14,15 +14,26 @@ local, custom Device definitions
 
 # from .area_detector import *
 # from .calculation_records import *
+from .data_management import *
 # from .fourc_diffractometer import *
 # from .ioc_stats import *
 # from .kohzu_monochromator import *
 # from .motors import *
 # from .noisy_detector import *
 # from .scaler import *
-# from .shutter_simulator import *
+from .shutter_simulator import *
 # from .simulated_fourc import *
 # from .simulated_kappa import *
 # from .slits import *
 # from .sixc_diffractometer import *
 # from .temperature_signal import *
+
+#custom MPE here
+from .ad_make_dets import *
+from .ad_plugin_classes import *
+from .generic_motors import *
+from .s20id_FPGAs import *
+from .s20id_pso import *
+from .s20idd_motors import *
+from .varex import *
+from .simdet import *

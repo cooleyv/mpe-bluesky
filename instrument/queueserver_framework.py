@@ -20,6 +20,7 @@ print(__file__)
 from . import iconfig
 from .epics_signal_config import epics_scan_id_source
 from .epics_signal_config import scan_id_epics
+from .framework import dm_setup
 import apstools
 import bluesky
 import bluesky_queueserver

@@ -1,0 +1,131 @@
+<?xml version="1.0" standalone="no" ?>
+<!-- Last update: 20240708 (AC) -->
+<!-- Reference information, -->
+<!-- https://cars9.uchicago.edu/software/epics/areaDetectorDoxygenHTML/_n_d_attribute_8h.html#a9f7184b8fbaae0823a57b493ef50080e  -->
+<!-- https://areadetector.github.io/master/ADCore/NDFileHDF5.html?highlight=layout#toc-entry-1  -->
+<!-- Download "NDAttributes.xsd" files from https://github.com/areaDetector/ADCore/blob/master/XML_schema/NDAttributes.xsd  -->
+<!-- -->
+<!-- An XML schema definition (XSD), is a framework document that defines the rules and constraints for XML documents.  -->
+<!-- Attributes -->  
+<Attributes
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://epics.aps.anl.gov/areaDetector/attributes ../attributes.xsd">
+
+    <!--  Detector information  -->
+    <Attribute name="DetectorManufacturer"      type="EPICS_PV"     source="20idsimAD:cam1:Manufacturer_RBV"           dbrtype="DBR_STRING"/>
+    <Attribute name="DetectorModel"             type="EPICS_PV"     source="20idsimAD:cam1:Model_RBV"                  dbrtype="DBR_STRING"/>
+    <Attribute name="SerialNumber"              type="EPICS_PV"     source="20idsimAD:cam1:SerialNumber_RBV"           dbrtype="DBR_STRING"/>
+    <Attribute name="FirmwareVersion"           type="EPICS_PV"     source="20idsimAD:cam1:FirmwareVersion_RBV"        dbrtype="DBR_STRING"/>
+    <Attribute name="SDKVersion"                type="EPICS_PV"     source="20idsimAD:cam1:SDKVersion_RBV"             dbrtype="DBR_STRING"/>
+    <Attribute name="DriverVersion"             type="EPICS_PV"     source="20idsimAD:cam1:DriverVersion_RBV"          dbrtype="DBR_STRING"/>
+    <Attribute name="ADCoreVersion"             type="EPICS_PV"     source="20idsimAD:cam1:ADCoreVersion_RBV"          dbrtype="DBR_STRING"/>
+
+    <Attribute name="MaxSizeX"                  type="EPICS_PV"     source="20idsimAD:cam1:MaxSizeX_RBV"               dbrtype="DBR_NATIVE"/>
+    <Attribute name="MaxSizeY"                  type="EPICS_PV"     source="20idsimAD:cam1:MaxSizeY_RBV"               dbrtype="DBR_NATIVE"/>
+    <Attribute name="MinX"                      type="EPICS_PV"     source="20idsimAD:cam1:MinX"                       dbrtype="DBR_NATIVE"/>
+    <Attribute name="MinY"                      type="EPICS_PV"     source="20idsimAD:cam1:MinY"                       dbrtype="DBR_NATIVE"/>
+    <Attribute name="SizeX"                     type="EPICS_PV"     source="20idsimAD:cam1:SizeX"                      dbrtype="DBR_NATIVE"/>
+    <Attribute name="SizeY"                     type="EPICS_PV"     source="20idsimAD:cam1:SizeY"                      dbrtype="DBR_NATIVE"/>
+    <Attribute name="BinX"                      type="EPICS_PV"     source="20idsimAD:cam1:BinX"                       dbrtype="DBR_NATIVE"/>
+    <Attribute name="BinY"                      type="EPICS_PV"     source="20idsimAD:cam1:BinY"                       dbrtype="DBR_NATIVE"/>
+    
+    <Attribute name="AcqTime"                   type="EPICS_PV"     source="20idsimAD:cam1:AcquireTime_RBV"            dbrtype="DBR_NATIVE"/>
+    <Attribute name="AcqPeriod"                 type="EPICS_PV"     source="20idsimAD:cam1:AcquirePeriod_RBV"          dbrtype="DBR_NATIVE"/>
+    <Attribute name="Gain"                      type="EPICS_PV"     source="20idsimAD:cam1:Gain_RBV"                   dbrtype="DBR_NATIVE"/>
+    <Attribute name="DataType"                  type="EPICS_PV"     source="20idsimAD:cam1:DataType_RBV"               dbrtype="DBR_STRING"/>
+    <Attribute name="ArrayCounter"              type="EPICS_PV"     source="20idssimAD:cam1:ArrayCounter_RBV"           dbrtype="DBR_NATIVE"/>
+    <Attribute name="Temperature"               type="EPICS_PV"     source="20idsimAD:cam1:Temperature_RBV"            dbrtype="DBR_NATIVE"/>
+    <!--  following line is critical to direct frame(s) to pre-defined destination  -->
+    <Attribute name="SaveDest"                  type="EPICS_PV"     source="20idsimAD:cam1:FrameType"                  dbrtype="DBR_STRING"/>
+    <Attribute name="SampleName"                type="EPICS_PV"     source="20idsimAD:HDF1:FileName"                   dbrtype="DBR_STRING"/>
+    <Attribute name="FullFileName"              type="EPICS_PV"     source="20idsimAD:HDF1:FullFileName_RBV"           dbrtype="DBR_STRING"/>
+    <Attribute name="FilePath"                  type="EPICS_PV"     source="20idsimAD:HDF1:FilePath_RBV"               dbrtype="DBR_STRING"/>
+    <Attribute name="HDFPlugInVersion"          type="EPICS_PV"     source="20idsimAD:HDF1:PluginType_RBV"             dbrtype="DBR_STRING"/>
+
+    <!--  Storage Ring information  -->
+    <Attribute name="DateTimeStart"             type="EPICS_PV"     source="S:IOC:timeOfDayForm1SI"                dbrtype="DBR_STRING"    description="date and time at start"/>
+    <Attribute name="DateTimeEnd"               type="EPICS_PV"     source="S:IOC:timeOfDayForm1SI"                dbrtype="DBR_STRING"    description="date and time at end"/>
+    <Attribute name="Current"                   type="EPICS_PV"     source="S:SRcurrentAI"                         dbrtype="DBR_NATIVE"    description="ring Current (mA)"/>
+    <Attribute name="TopUpStatus"               type="EPICS_PV"     source="S:TopUpStatus"                         dbrtype="DBR_STRING"    description="Top-UP Status"/>
+    <Attribute name="RingOperator"              type="EPICS_PV"     source="OPS:message1"                          dbrtype="DBR_STRING"    description="storage ring operator in charge"/>
+    <Attribute name="FillPattern"               type="EPICS_PV"     source="OPS:message3"                          dbrtype="DBR_STRING"    description="storage ring fill pattern"/>
+    <Attribute name="NextFillInfo"              type="EPICS_PV"     source="OPS:message6"                          dbrtype="DBR_STRING"    description="next fill info"/>
+
+    <!--  Beamline/BCS Inforation  -->
+    <Attribute name="SCUCurrent"                type="EPICS_PV"     source="S20ID:DSID:GapM.VAL"                dbrtype="DBR_DOUBLE"/>
+
+    <Attribute name="WBSlitsHSize"              type="EPICS_PV"     source="20idhedm:m8.RBV"                       dbrtype="DBR_NATIVE"/>
+    <Attribute name="WBSlitsVSize"              type="EPICS_PV"     source="20idhedm:m8.RBV"                       dbrtype="DBR_NATIVE"/>
+    <Attribute name="WBSlitsHCenter"            type="EPICS_PV"     source="20idhedm:m8.RBV"                       dbrtype="DBR_NATIVE"/>
+    <Attribute name="WBSlitsVCenter"            type="EPICS_PV"     source="20idhedm:m8.RBV"                       dbrtype="DBR_NATIVE"/>
+
+    <Attribute name="USSlitsHSize"              type="EPICS_PV"     source="20idhedm:m8.RBV"                    dbrtype="DBR_NATIVE"/>
+    <Attribute name="USSlitsVSize"              type="EPICS_PV"     source="20idhedm:m8.RBV"                    dbrtype="DBR_NATIVE"/>
+    <Attribute name="USSlitsHCenter"            type="EPICS_PV"     source="20idhedm:m8.RBV"                    dbrtype="DBR_NATIVE"/>
+    <Attribute name="USSlitsVCenter"            type="EPICS_PV"     source="20idhedm:m8.RBV"                    dbrtype="DBR_NATIVE"/>
+
+    <Attribute name="DSSlitsHSize"              type="EPICS_PV"     source="20idhedm:m8.RBV"                    dbrtype="DBR_NATIVE"/>
+    <Attribute name="DSSlitsVSize"              type="EPICS_PV"     source="20idhedm:m8.RBV"                    dbrtype="DBR_NATIVE"/>
+    <Attribute name="DSSlitsHCenter"            type="EPICS_PV"     source="20idhedm:m8.RBV"                    dbrtype="DBR_NATIVE"/>
+    <Attribute name="DSSlitsVCenter"            type="EPICS_PV"     source="20idhedm:m8.RBV"                    dbrtype="DBR_NATIVE"/>
+<!--
+    <Attribute name="IC1"                       type="EPICS_PV"     source="6idTAMM1:TetrAmm:Current1Ave"          dbrtype="DBR_STRING"    description="IC1 (fast) reading"/>
+    <Attribute name="IC2"                       type="EPICS_PV"     source="6idTAMM1:TetrAmm:Current2Ave"          dbrtype="DBR_STRING"    description="IC2 (fast) reading"/>
+    <Attribute name="IC3"                       type="EPICS_PV"     source="6idTAMM1:TetrAmm:Current3Ave"          dbrtype="DBR_STRING"    description="IC3 (fast) reading"/>
+    <Attribute name="IC4"                       type="EPICS_PV"     source="6idTAMM1:TetrAmm:Current4Ave"          dbrtype="DBR_STRING"    description="IC4 (fast) reading"/>        
+
+    <Attribute name="FFdiode"                   type="EPICS_PV"     source="6idTAMM2:TetrAmm:Current3Ave"          dbrtype="DBR_STRING"    description="Diode on FFDet, (fast)"/>
+-->
+    <!--  Instrument Inforation  -->
+    <Attribute name="Aero"                      type="EPICS_PV"     source="20idhedmA:m1.RBV"                      dbrtype="DBR_NATIVE"    description="main rotation stage readback."/>
+    <Attribute name="AeroX"                     type="EPICS_PV"     source="20idhedm:m37.RBV"                       dbrtype="DBR_NATIVE"/>
+    <Attribute name="AeroXDail"                 type="EPICS_PV"     source="20idhedm:m37.DRBV"                      dbrtype="DBR_NATIVE"/>
+
+    <Attribute name="samX"                      type="EPICS_PV"     source="20idhedm:m41.RBV"                       dbrtype="DBR_NATIVE"/>
+    <Attribute name="samZ"                      type="EPICS_PV"     source="20idhedm:m42.RBV"                       dbrtype="DBR_NATIVE"/>
+    <Attribute name="samY"                      type="EPICS_PV"     source="20idhedm:m40.RBV"                       dbrtype="DBR_NATIVE"/>
+    <Attribute name="samRx"                     type="EPICS_PV"     source="20idhedm:m44.RBV"                       dbrtype="DBR_NATIVE"/>
+    <Attribute name="samRz"                     type="EPICS_PV"     source="20idhedm:m43.RBV"                       dbrtype="DBR_NATIVE"/>
+
+    <Attribute name="FFX"                       type="EPICS_PV"     source="20idhedm:m49.RBV"                       dbrtype="DBR_NATIVE"/>
+    <Attribute name="FFY"                       type="EPICS_PV"     source="20idhedm:m49.RBV"                       dbrtype="DBR_NATIVE"/>
+    <Attribute name="FFZ"                       type="EPICS_PV"     source="20idhedm:m49.RBV"                       dbrtype="DBR_NATIVE"/>
+
+    <!--  Scan Parameters  -->    
+    <Attribute name="FlyStartPos"               type="EPICS_PV"     source="20idhedmA:PSOFly1:startPos"            dbrtype="DBR_NATIVE"/>
+    <Attribute name="FlyEndPos"                 type="EPICS_PV"     source="20idhedmA:PSOFly1:endPos"              dbrtype="DBR_NATIVE"/>
+    <Attribute name="FlySlewSpeed"              type="EPICS_PV"     source="20idhedmA:PSOFly1:slewSpeed"           dbrtype="DBR_NATIVE"/>
+    <Attribute name="FlyScanDelta"              type="EPICS_PV"     source="20idhedmA:PSOFly1:scanDelta"           dbrtype="DBR_NATIVE"/>
+    <Attribute name="FlyDeltaTime"              type="EPICS_PV"     source="20idhedmA:PSOFly1:deltaTime"           dbrtype="DBR_NATIVE"/>
+    <Attribute name="FlyMotorName"              type="EPICS_PV"     source="20idhedmA:PSOFly1:motorName"           dbrtype="DBR_STRING"/>
+
+<!-- 
+    <Attribute name="BeamlineFilterA"               type="EPICS_PV"     source="6bma:fltr1:select.VAL"                      dbrtype="DBR_ENUM"/>
+    <Attribute name="BeamlineFilterB"               type="EPICS_PV"     source="6bma:fltr2:select.VAL"                      dbrtype="DBR_ENUM"/>
+
+    <Attribute name="Theta"                         type="EPICS_PV"     source="2bmb:DX:theta"                              dbrtype="DBR_DOUBLE" />
+    <Attribute name="Theta_EGU"                     type="EPICS_PV"     source="2bmb:DX:theta.EGU"                          dbrtype="DBR_STRING" />
+
+    <Attribute name="SamplePitch"                   type="EPICS_PV"     source="2bmb:m54.RBV"                               dbrtype="DBR_DOUBLE"/>
+    <Attribute name="SampleRoll"                    type="EPICS_PV"     source="2bmb:m53.RBV"                               dbrtype="DBR_DOUBLE"/>
+    <Attribute name="SampleX"                       type="EPICS_PV"     source="2bmb:m63.RBV"                               dbrtype="DBR_DOUBLE"/>
+    <Attribute name="SampleY"                       type="EPICS_PV"     source="2bmb:m57.RBV"                               dbrtype="DBR_DOUBLE"/>
+    <Attribute name="SampleXX"                      type="EPICS_PV"     source="2bmb:m76.RBV"                               dbrtype="DBR_DOUBLE"/>
+    <Attribute name="SampleZZ"                      type="EPICS_PV"     source="2bmb:m77.RBV"                               dbrtype="DBR_DOUBLE"/>
+    <Attribute name="RailZ"                         type="EPICS_PV"     source="2bmb:m31.RBV"                               dbrtype="DBR_DOUBLE"/>
+    <Attribute name="SampleRotary"                  type="EPICS_PV"     source="2bmb:m100.RBV"                              dbrtype="DBR_DOUBLE"/>
+
+    <Attribute name="UserName"                      type="EPICS_PV"     source="2bmS1:UserName"                             dbrtype="DBR_STRING"/>
+    <Attribute name="UserAffiliation"               type="EPICS_PV"     source="2bmS1:UserInstitution"                      dbrtype="DBR_STRING"/>
+    <Attribute name="UserBadge"                     type="EPICS_PV"     source="2bmS1:UserBadge"                            dbrtype="DBR_STRING"/>
+    <Attribute name="UserEmail"                     type="EPICS_PV"     source="2bmS1:UserEmail"                            dbrtype="DBR_STRING"/>
+    <Attribute name="ProposalNumber"                type="EPICS_PV"     source="2bmS1:ProposalNumber"                       dbrtype="DBR_STRING"/>
+    <Attribute name="ProposalTitle"                 type="EPICS_PV"     source="2bmS1:ProposalTitle"                        dbrtype="DBR_STRING"/>
+    
+    <Attribute name="ObjectiveMag"                  type="EPICS_PV"     source="2bmb:caputRecorderGbl_5"                    dbrtype="DBR_STRING"/>
+    <Attribute name="ScintName"                     type="EPICS_PV"     source="2bmb:caputRecorderGbl_8"                    dbrtype="DBR_STRING"/>
+    <Attribute name="ScintThickness"                type="EPICS_PV"     source="2bmb:caputRecorderGbl_7"                    dbrtype="DBR_STRING"/>
+    <Attribute name="SamDetDist"                    type="EPICS_PV"     source="2bmb:caputRecorderGbl_6"                    dbrtype="DBR_STRING"/>
+    <Attribute name="ManualFilters"                 type="EPICS_PV"     source="2bmb:caputRecorderGbl_9"                    dbrtype="DBR_STRING"/> -->
+   
+</Attributes>

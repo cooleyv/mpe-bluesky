@@ -6,9 +6,10 @@
 # change the program defaults here
 # CONDA: pre-defined in GitHub Actions workflow
 export CONDA=${CONDA:-/APSshare/miniconda/x86_64}
-export CONDA_ENVIRONMENT="${BLUESKY_CONDA_ENV:-training_2022}"
-export DATABROKER_CATALOG=${DATABROKER_CATALOG:-training}
-export QS_SERVER_HOST=$(hostname)  # or host (that passes $(hostname) test below)
+export CONDA_ENVIRONMENT="${BLUESKY_CONDA_ENV:-bluesky_2024_2}"
+export DATABROKER_CATALOG=${DATABROKER_CATALOG:-ht_hedm}
+export QS_SERVER_HOST="sequoia.xray.aps.anl.gov"  # or host (that passes $(hostname) test below)
+export QS_SERVER_USER="s20hedm"
 export QS_UPDATE_PLANS_DEVICES=ENVIRONMENT_OPEN
 export QS_USER_GROUP_PERMISSIONS_FILE="./user_group_permissions.yaml"
 export QS_USER_GROUP_PERMISSIONS_RELOAD=ON_STARTUP
@@ -21,6 +22,12 @@ export REDIS_ADDR=localhost
 # QS and redis must be on the same workstation
 if [ "$(hostname)" != "${QS_SERVER_HOST}" ]; then
     echo "Must run queueserver on ${QS_SERVER_HOST}.  This is $(hostname)"
+    exit 1
+fi
+
+# QS must run from one specific user account
+if [ "${USER}" != "${QS_SERVER_USER}" ]; then
+    echo "Must run queueserver by user ${QS_SERVER_USER}.  This is ${USER}"
     exit 1
 fi
 
