@@ -25,7 +25,7 @@ __all__ = [
     "ge2",
     "ge3",
     "ge4",
-    #"ge5"
+    "ge5"
 ]
 
 #import for logging
@@ -45,6 +45,48 @@ from ophyd import EpicsSignalRO
 
 #import other stuff
 import bluesky.plan_stubs as bps
+from .. import iconfig
+
+#pick which beamline we are operating at 
+beamline = iconfig["RUNENGINE_METADATA"]["beamline_id"]
+
+#define global variables for file saving 
+PI_FOLDER = iconfig["EXPERIMENT"]["PI_FOLDER"]
+
+WRITE_PATH = {
+    "ge1" : "G:\\" + PI_FOLDER + "\\",
+    "ge2" : "C:\\" + PI_FOLDER + "\\",
+    "ge3" : "G:\\" + PI_FOLDER + "\\",
+    "ge4" : "C:\\" + PI_FOLDER + "\\",
+    "ge5" : "V:\\" + PI_FOLDER + "\\",
+}
+
+READ_PATH = {
+    "ge1" : "/home/beams/S1IDUSER/mnt/s1c/" + PI_FOLDER + "/ge1/",
+    "ge2" : "/home/beams/S1IDUSER/mnt/s1c/" + PI_FOLDER + "/ge2/",
+    "ge3" : "/home/beams/S1IDUSER/mnt/s1c/" + PI_FOLDER + "/ge3/",
+    "ge4" : "/home/beams/S1IDUSER/mnt/s1c/" + PI_FOLDER + "/ge4/",
+    "ge5" : "/home/beams/S1IDUSER/mnt/s1c/" + PI_FOLDER + "/ge5/",
+}
+
+
+#define xml files for HDF writing (for now)
+#FIXME: need separate files for separate dets
+DEFAULT_XML_LAYOUT = {
+    "ge1" : "/home/beams/S1IDUSER/mnt/s1b/bluesky_dev/hdf5_layout/GE3_layout.xml",
+    "ge2" : "/home/beams/S1IDUSER/mnt/s1b/bluesky_dev/hdf5_layout/GE3_layout.xml",
+    "ge3" : "/home/beams/S1IDUSER/mnt/s1b/bluesky_dev/hdf5_layout/GE3_layout.xml",
+    "ge4" : "/home/beams/S1IDUSER/mnt/s1b/bluesky_dev/hdf5_layout/GE3_layout.xml",
+    "ge5" : "/home/beams/S1IDUSER/mnt/s1b/bluesky_dev/hdf5_layout/GE3_layout.xml",
+}
+
+DEFAULT_XML_ATTRIBUTE = {
+    "ge1" : "/home/beams/S1IDUSER/mnt/s1b/bluesky_dev/hdf5_layout/GE3_attributes.xml",
+    "ge2" : "/home/beams/S1IDUSER/mnt/s1b/bluesky_dev/hdf5_layout/GE3_attributes.xml",
+    "ge3" : "/home/beams/S1IDUSER/mnt/s1b/bluesky_dev/hdf5_layout/GE3_attributes.xml",
+    "ge4" : "/home/beams/S1IDUSER/mnt/s1b/bluesky_dev/hdf5_layout/GE3_attributes.xml",
+    "ge5" : "/home/beams/S1IDUSER/mnt/s1b/bluesky_dev/hdf5_layout/GE3_attributes.xml",
+}
 
 #define blueprint for making GE cam class
 def make_GE_cam(Det_CamBase): 
@@ -102,7 +144,83 @@ def make_GE_cam(Det_CamBase):
     return GE_CamPlugin
         
 #define default plugin config
-GE_plugin_control = {
+ge1_plugin_control = {
+    "use_image1" : True,
+    "use_pva1" : False,
+    "use_proc1" : False,
+    "use_trans1" : False,
+    "use_over1" : False, 
+    "use_roi1" : False, 
+    "use_tiff1" : True, 
+    "use_hdf1" : False, 
+    "ndport_image1" : "ANGIO",
+    "ndport_pva1" : "",
+    "ndport_proc1" : "",
+    "ndport_trans1" : "",
+    "ndport_over1" : "",
+    "ndport_roi1" : "",
+    "ndport_tiff1" : "ANGIO",
+    "ndport_hdf1" : "ANGIO"
+}
+
+ge2_plugin_control = {
+    "use_image1" : True,
+    "use_pva1" : False,
+    "use_proc1" : False,
+    "use_trans1" : False,
+    "use_over1" : False, 
+    "use_roi1" : False, 
+    "use_tiff1" : True, 
+    "use_hdf1" : False, 
+    "ndport_image1" : "ANGIO",
+    "ndport_pva1" : "",
+    "ndport_proc1" : "",
+    "ndport_trans1" : "",
+    "ndport_over1" : "",
+    "ndport_roi1" : "",
+    "ndport_tiff1" : "ANGIO",
+    "ndport_hdf1" : "ANGIO"
+}
+
+ge3_plugin_control = {
+    "use_image1" : True,
+    "use_pva1" : False,
+    "use_proc1" : False,
+    "use_trans1" : False,
+    "use_over1" : False, 
+    "use_roi1" : False, 
+    "use_tiff1" : True, 
+    "use_hdf1" : False, 
+    "ndport_image1" : "ANGIO",
+    "ndport_pva1" : "",
+    "ndport_proc1" : "",
+    "ndport_trans1" : "",
+    "ndport_over1" : "",
+    "ndport_roi1" : "",
+    "ndport_tiff1" : "ANGIO",
+    "ndport_hdf1" : "ANGIO"
+}
+
+ge4_plugin_control = {
+    "use_image1" : True,
+    "use_pva1" : False,
+    "use_proc1" : False,
+    "use_trans1" : False,
+    "use_over1" : False, 
+    "use_roi1" : False, 
+    "use_tiff1" : True, 
+    "use_hdf1" : False, 
+    "ndport_image1" : "ANGIO",
+    "ndport_pva1" : "",
+    "ndport_proc1" : "",
+    "ndport_trans1" : "",
+    "ndport_over1" : "",
+    "ndport_roi1" : "",
+    "ndport_tiff1" : "ANGIO",
+    "ndport_hdf1" : "ANGIO"
+}
+
+ge5_plugin_control = {
     "use_image1" : True,
     "use_pva1" : False,
     "use_proc1" : False,
@@ -124,13 +242,15 @@ GE_plugin_control = {
 #define GE Mixin class for extra attributes/methods
 class GEMixin(object):
     
-    def fastsweep_config(self, nframes):
+    def fastsweep_config(
+        self,
+        exposure_time
+    ):
         """Method for configuring panels during fastsweep."""
         
         yield from self.default_setup()
 
-        #configure plugin stage_sigs implemented in `fastsweep()`
-        self.cam.stage_sigs["num_images"] = nframes
+       
         
 
 
@@ -175,66 +295,97 @@ class GEMixin(object):
             """Initialize file writer after startup."""
             
             print(f"Initializing file writer for {self.name}.")
-            yield from bps.trigger(self, wait = True)        
+            yield from bps.trigger(self, wait = True)     
+            
+    def fastsweep_dark_config(
+        self, 
+        ndarks
+    ):
+        
+        print("Development is needed for GE dark frames during fastsweep.")
+        
+        
+        
+    def fastsweep_data_config(
+        self,
+        nframes
+    ):
+        
+        yield from bps.mv(
+            self.cam.num_images, nframes
+        )
+       
 
-#create GE objects
-ge1 = make_det(
-    det_prefix = "GE1:",
-    device_name = "ge1",
-    local_drive = "G:",
-    image_dir = "",
-    make_cam_plugin = make_GE_cam,
-    default_plugin_control = GE_plugin_control,
-    det_mixin = GEMixin,
-    ioc_WIN = True, 
-    pva1_exists = True
-)       
+if "1-ID" in beamline:       
+       
+    #create GE objects
+    ge1 = make_det(
+        det_prefix = "GE1:",
+        device_name = "ge1",
+        READ_PATH = READ_PATH["ge1"],
+        WRITE_PATH = WRITE_PATH["ge1"],
+        make_cam_plugin = make_GE_cam,
+        default_plugin_control = ge1_plugin_control,
+        det_mixin = GEMixin,
+        ioc_WIN = True, 
+        pva1_exists = True,
+        use_hdf1 = True,
+        use_tiff1 = False   #FIXME as needed
+    )       
 
-ge2 = make_det(
-    det_prefix = "GE2:",
-    device_name = "ge2",
-    local_drive = "G:",
-    image_dir = "",
-    make_cam_plugin = make_GE_cam,
-    default_plugin_control = GE_plugin_control,
-    det_mixin = GEMixin,
-    ioc_WIN = True, 
-    pva1_exists = True
-)  
+    ge2 = make_det(
+        det_prefix = "GE2:",
+        device_name = "ge2",
+        READ_PATH = READ_PATH["ge2"],
+        WRITE_PATH = WRITE_PATH["ge2"],
+        make_cam_plugin = make_GE_cam,
+        default_plugin_control = ge2_plugin_control,
+        det_mixin = GEMixin,
+        ioc_WIN = True, 
+        pva1_exists = True,
+        use_hdf1 = True,
+        use_tiff1 = False
+    )  
 
-ge3 = make_det(
-    det_prefix = "GE3:",
-    device_name = "ge3",
-    local_drive = "G:",
-    image_dir = "",
-    make_cam_plugin = make_GE_cam,
-    default_plugin_control = GE_plugin_control,
-    det_mixin = GEMixin,
-    ioc_WIN = True, 
-    pva1_exists = True
-)  
+    ge3 = make_det(
+        det_prefix = "GE3:",
+        device_name = "ge3",
+        READ_PATH = READ_PATH["ge3"],
+        WRITE_PATH = WRITE_PATH["ge3"],
+        make_cam_plugin = make_GE_cam,
+        default_plugin_control = ge3_plugin_control,
+        det_mixin = GEMixin,
+        ioc_WIN = True, 
+        pva1_exists = True,
+        use_hdf1 = True,
+        use_tiff1 = False
+    )  
 
-ge4 = make_det(
-    det_prefix = "GE4:",
-    device_name = "ge4",
-    local_drive = "G:",
-    image_dir = "",
-    make_cam_plugin = make_GE_cam,
-    default_plugin_control = GE_plugin_control,
-    det_mixin = GEMixin,
-    ioc_WIN = True, 
-    pva1_exists = True
-)  
+    ge4 = make_det(
+        det_prefix = "GE4:",
+        device_name = "ge4",
+        READ_PATH = READ_PATH["ge4"],
+        WRITE_PATH = WRITE_PATH["ge4"],
+        make_cam_plugin = make_GE_cam,
+        default_plugin_control = ge4_plugin_control,
+        det_mixin = GEMixin,
+        ioc_WIN = True, 
+        pva1_exists = True,
+        use_hdf1 = True, 
+        use_tiff1 = False
+    )  
 
-# ge5 = make_det(
-#     det_prefix = "GE5:",
-#     device_name = "ge5",
-#     local_drive = "G:",
-#     image_dir = "",
-#     make_cam_plugin = make_GE_cam,
-#     default_plugin_control = GE_plugin_control,
-#     det_mixin = GEMixin,
-#     ioc_WIN = True, 
-#     pva1_exists = True
-# )  
+    ge5 = make_det(
+        det_prefix = "GE5:",
+        device_name = "ge5",
+        READ_PATH = READ_PATH["ge5"],
+        WRITE_PATH = WRITE_PATH["ge5"],
+        make_cam_plugin = make_GE_cam,
+        default_plugin_control = ge5_plugin_control,
+        det_mixin = GEMixin,
+        ioc_WIN = True, 
+        pva1_exists = True,
+        use_hdf1 = True,
+        use_tiff1 = False
+    )  
      

@@ -14,15 +14,19 @@ These include:
 `make_det()` returns a detector object to control VAREX. 
 
 
-TODO: fix Win and Lin path functions in ad_make_dets and change code here, too 
-TODO: add s20varex2 READ_PATH_STEM when available
-FIXME: READ_PATH_STEM is exported but won't work when multiple detectors are used
-TODO: add check for xml files existing
+
+FIXME: READ_PATH_STEM is exported for flyscan/bdp demo but won't 
+    work when multiple detectors are used
+    
+FIXME: get XML file paths from iconfig when ready
+
+TODO: add information for s1varex1
 """
 
 __all__ = [
     "varex20idff",
     "s20varex2",
+    "s1varex1",
 ]
 
 #import for logging
@@ -45,17 +49,20 @@ import bluesky.plan_stubs as bps
 import pathlib
 from .. import iconfig
 
+#pick which beamline we are operating at 
+beamline = iconfig["RUNENGINE_METADATA"]["beamline_id"]
+
 #define global variables 
 DEFAULT_XML_LAYOUT = {
     "varex20idff" : "M:\Varex_detector\Varex_layout.xml",
     "s20varex2" : "M:\\bluesky_dev\hdf5_layout\Varex_layout_20IDD.xml",
-    "varex1id" : ""
+    "s1varex1" : "",
     }
 
-DEFAULT_XML_ATTRIBUITE = {
+DEFAULT_XML_ATTRIBUTE = {
     "varex20idff" : 'M:\Varex_detector\Varex_attributes.xml',
     "s20varex2" : "M:\\bluesky_dev\hdf5_layout\Varex_attributes_20IDD.xml",
-    "varex1id" : ""
+    "s1varex1" : ""
     }
 
 PI_FOLDER = iconfig["EXPERIMENT"]["PI_FOLDER"]
@@ -63,20 +70,17 @@ PI_FOLDER = iconfig["EXPERIMENT"]["PI_FOLDER"]
 WRITE_PATH = {
     "varex20idff" : "M:\\" + PI_FOLDER + "\\",
     "s20varex2" : "V:\\" + PI_FOLDER + "\\",
-    "varex1id" : "" + PI_FOLDER + "\\",
+    "s1varex1" : ""
 }
-
 READ_PATH = {
     "varex20idff" : "/net/s6iddata/export/hedm_sata/" + PI_FOLDER + "/",
     "s20varex2" : "" + PI_FOLDER + '/',
-    "varex1id" : "" + PI_FOLDER + "/",
+    "s1varex1" : "",
 }
 
 
 # WRITE_PATH = WRITE_PATH_STEM + PI_FOLDER + "\\"
 # READ_PATH = READ_PATH_STEM + PI_FOLDER + '/'
-
-
 
 
 #define blueprint for making VAREX cam class
@@ -132,25 +136,64 @@ def make_varex_cam(Det_CamBase):
         
     return Varex_CamPlugin
 
-#define default plugin config
-varex_plugin_control = {
+#define default plugin configs - separate for each det
+varex20idff_plugin_control = {
     "use_image1" : False,
     "use_pva1" : True,
     "use_proc1" : True,
     "use_trans1" : True,
     "use_over1" : False, 
     "use_roi1" : False, 
-    "use_tiff1" : False, 
+    "use_tiff1" : True, 
     "use_hdf1" : True, 
     "ndport_image1" : "",
     "ndport_pva1" : "PROC1",
     "ndport_proc1" : "TRANS1",
-    "ndport_trans1" : "VAREX", #FIXME: "4343CT1",
+    "ndport_trans1" : "4343CT1",    #NOTE: port name is diff for diff dets
     "ndport_over1" : "",
     "ndport_roi1" : "",
-    "ndport_tiff1" : "",
+    "ndport_tiff1" : "TRANS1",
     "ndport_hdf1" : "TRANS1"
 }
+
+s20varex2_plugin_control = {
+    "use_image1" : False,
+    "use_pva1" : True,
+    "use_proc1" : True,
+    "use_trans1" : True,
+    "use_over1" : False, 
+    "use_roi1" : False, 
+    "use_tiff1" : True, 
+    "use_hdf1" : True, 
+    "ndport_image1" : "",
+    "ndport_pva1" : "PROC1",
+    "ndport_proc1" : "TRANS1",
+    "ndport_trans1" : "VAREX2", #NOTE: port name is diff for diff dets
+    "ndport_over1" : "",
+    "ndport_roi1" : "",
+    "ndport_tiff1" : "TRANS1",
+    "ndport_hdf1" : "TRANS1"
+}
+
+s1varex1_plugin_control = {
+    "use_image1" : False,
+    "use_pva1" : True,
+    "use_proc1" : True,
+    "use_trans1" : True,
+    "use_over1" : False, 
+    "use_roi1" : False, 
+    "use_tiff1" : True, 
+    "use_hdf1" : True, 
+    "ndport_image1" : "",
+    "ndport_pva1" : "PROC1",
+    "ndport_proc1" : "TRANS1",
+    "ndport_trans1" : "VAREX1", #NOTE: port name is diff for diff dets
+    "ndport_over1" : "",
+    "ndport_roi1" : "",
+    "ndport_tiff1" : "TRANS1",
+    "ndport_hdf1" : "TRANS1"
+}
+
 
 #define VAREX Mixin class for extra attributes/methods 
 class VarexMixin(object):
@@ -170,7 +213,7 @@ class VarexMixin(object):
 
         #attribute file
         yield from bps.mv(
-            self.cam.nd_attributes_file, DEFAULT_XML_ATTRIBUITE[self.name]
+            self.cam.nd_attributes_file, DEFAULT_XML_ATTRIBUTE[self.name]  #FIXME
         )
 
         #default values for hdf1 plugin
@@ -268,7 +311,7 @@ class VarexMixin(object):
         
     def fastsweep_dark_config(
         self,
-        ndark_frames
+        ndarks
       
     ):
         
@@ -282,7 +325,7 @@ class VarexMixin(object):
         yield from bps.mv(
             #set cam plugin 
             self.cam.frame_type, 1, #1 = "dark"; must be given as integer, string won't work
-            self.cam.num_images, ndark_frames, 
+            self.cam.num_images, ndarks, 
             self.cam.trigger_mode, "Internal",
             self.cam.skip_frames, 1, #enable
             self.cam.num_frames_skip, 1,
@@ -292,8 +335,6 @@ class VarexMixin(object):
         )
 
         print(f"""Detector configured for collecting dark frames in {self.cam.trigger_mode.get(as_string = True)} mode.""")
-
-
 
 
     def fastsweep_data_config(
@@ -338,18 +379,51 @@ class VarexMixin(object):
               Averaging {images_per_frame} images per frame.""")
 
 
-        
-#create VAREX object for 20-ID-D detector
-varex1id = make_det(
-    det_prefix = ":",
-    device_name = "varex1id",
-    #local_drive = "M:",
-    READ_PATH = READ_PATH["varex1id"],
-    WRITE_PATH = WRITE_PATH["varex1id"],
-    make_cam_plugin = make_varex_cam,
-    default_plugin_control = varex_plugin_control,
-    det_mixin = VarexMixin, 
-    ioc_WIN = True, 
-    pva1_exists = True,
-    use_hdf1= True
-)    
+if "20-ID" in beamline: 
+    #create VAREX object for 20-ID-D detector
+    varex20idff = make_det(
+        det_prefix = "20IDFF:",
+        device_name = "varex20idff",
+        #local_drive = "M:",
+        READ_PATH = READ_PATH["varex20idff"],
+        WRITE_PATH = WRITE_PATH["varex20idff"],
+        make_cam_plugin = make_varex_cam,
+        default_plugin_control = varex20idff_plugin_control,
+        det_mixin = VarexMixin, 
+        ioc_WIN = True, 
+        pva1_exists = True,
+        use_hdf1= True,
+        use_tiff1 = True
+    )    
+
+    #create VAREX object for 20-ID-E detector
+    s20varex2 = make_det(
+        det_prefix = "20idVarex2:",
+        device_name = "s20varex2",
+        #local_drive = "M:",
+        READ_PATH = READ_PATH["s20varex2"],
+        WRITE_PATH = WRITE_PATH["s20varex2"],
+        make_cam_plugin = make_varex_cam,
+        default_plugin_control = s20varex2_plugin_control,
+        det_mixin = VarexMixin, 
+        ioc_WIN = True, 
+        pva1_exists = True,
+        use_hdf1= True,
+        use_tiff1 = True
+    )    
+
+if "1-ID" in beamline: 
+    #create VAREX object for 1-ID detector
+    s1varex1 = make_det(
+        det_prefix = "1idVarex1:",
+        device_name = "s1varex1",
+        READ_PATH = READ_PATH["s1varex1"],
+        WRITE_PATH = WRITE_PATH["s1varex1"],
+        make_cam_plugin = make_varex_cam,
+        default_plugin_control = s1varex1_plugin_control,
+        det_mixin = VarexMixin,
+        ioc_WIN = True, 
+        pva1_exists = True, 
+        use_hdf1 = True, 
+        use_tiff1 = True
+    )   

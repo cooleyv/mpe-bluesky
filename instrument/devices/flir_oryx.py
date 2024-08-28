@@ -16,13 +16,14 @@ These include:
 Note: Cannot connect to this device as-is while logged into a 1-ID controls 
 computer since the device machine runs on 20-ID subnet, not 1-ID. 
 
-TODO: Confirm plugin default enable/disable settings
+FIXME: fix file read/write paths
+FIXME: add xml file paths as needed
 TODO: add prefix for 1-ID camera when it arrives.
 
 """
 
 __all__ = [
-    "oryx_20idd",
+    "oryx20idd",
 ]
 
 #import for logging
@@ -42,16 +43,34 @@ from ophyd import EpicsSignal
 from ophyd import EpicsSignalWithRBV
 from ophyd import EpicsSignalRO
 
-
 #import other stuff
 import os
 #from .. import iconfig 
 from bluesky import plan_stubs as bps
+from .. import iconfig
 
-#FIXME
-#define paths
-LINUX_ROOT = "/scratch/tmp/"  #Path root for both bluesky and detectors on linux
-IMAGE_DIR = "mpe_apr24/pointgrey/"  #TODO: pull this specifically from iconfig!!
+#pick which beamline we are operating at 
+beamline = iconfig["RUNENGINE_METADATA"]["beamline_id"]
+
+#define global variables from the iconfig file
+PI_FOLDER = iconfig["EXPERIMENT"]["PI_FOLDER"]
+
+WRITE_PATH = {
+    "oryx20idd" : '/scratch/tmp/' + PI_FOLDER + '/',
+}
+
+READ_PATH = {
+    "oryx20idd" : '/home/beams/S20HEDM/mnt/',   #FIXME
+}
+
+#define xml files for the HDF writer
+DEFAULT_XML_LAYOUT = {
+    "oryx20idd" : "",
+}
+
+DEFAULT_XML_ATTRIBUTE = {
+    "oryx20idd" : "",
+}
 
 #define blueprint for making FLIR ORYX cam class
 def make_oryx_cam(Det_CamBase):
@@ -88,7 +107,7 @@ def make_oryx_cam(Det_CamBase):
 
 
 #define default plugin config
-oryx_plugin_control = {
+oryx20idd_plugin_control = {
     "use_image1" : True,
     "use_pva1" : True,
     "use_proc1" : False,
@@ -96,7 +115,7 @@ oryx_plugin_control = {
     "use_over1" : False, 
     "use_roi1" : False, 
     "use_tiff1" : False, 
-    "use_hdf1" : False, 
+    "use_hdf1" : True, 
     "ndport_image1" : "ARV1",
     "ndport_pva1" : "ARV1",
     "ndport_proc1" : "",
@@ -104,24 +123,39 @@ oryx_plugin_control = {
     "ndport_over1" : "",
     "ndport_roi1" : "",
     "ndport_tiff1" : "ARV1",
-    "ndport_hdf1" : ""
+    "ndport_hdf1" : "ARV1"
 }
 
 #define ORYX Mixin class for extra attributes/methods
 class OryxMixin(object):
     
+    def default_config(self):
+        print("Development is needed to configure oryx for default setup.")
+    
     def fastsweep_config(self):
         print("Development is needed to configure oryx for fastsweep.")
+        
+    def fastsweep_dark_config(self, ndarks):
+        print("Development is needed to configure oryx for fastsweep.")
+        
+    def fastsweep_data_config(self, nframes, images_per_frame = 1):
+        print("Development is needed to configure oryx for fastsweep.")
 
-#create ORYX object
-oryx_20idd = make_det(
-    det_prefix = "20iddOR1:",
-    device_name = "oryx_20idd",
-    local_drive = "/scratch/tmp/",
-    image_dir = "mpe_apr24/pointgrey/",
-    make_cam_plugin = make_oryx_cam,
-    default_plugin_control = oryx_plugin_control,
-    det_mixin = OryxMixin,
-    ioc_WIN = False,
-    pva1_exists = True
-)
+
+        
+if "20-ID" in beamline:    
+
+    #create ORYX object
+    oryx20idd = make_det(
+        det_prefix = "20iddOR1:",
+        device_name = "oryx20idd",
+        READ_PATH = READ_PATH["oryx20idd"],
+        WRITE_PATH = WRITE_PATH["oryx20idd"],
+        make_cam_plugin = make_oryx_cam,
+        default_plugin_control = oryx20idd_plugin_control,
+        det_mixin = OryxMixin,
+        ioc_WIN = False,
+        pva1_exists = True,
+        use_tiff1 = True,
+        use_hdf1 = True
+    )

@@ -20,6 +20,8 @@ enabling/disabling plugins as needed for the det), and any
 scan-specific mixin methods are located in `DETECTOR.py` file. 
 
 TODO: Uncomment lines needed to make hdf1 plugin when it has been primed for all dets. 
+FIXME: Change the root path for linux to something for 20ID
+FIXME: Win/Lin path formulations don't work for all detectors
 """
 
 __all__ = [
@@ -62,24 +64,17 @@ def find_det_version(
         IOC prefix of the detector; must end with ":". (example : "s1_pixirad2:")
     """
     
-    #special case for old retiga IOCs
-    # if det_prefix.startswith("QIMAGE"):
-    #     version = '1.9.1'
-        
-    #every other det
-    # else: 
     try:
         #first try to connect to ADCoreVersion PV
         adcore_pv = det_prefix + "cam1:ADCoreVersion_RBV"
         adcore_version = EpicsSignal(adcore_pv, name = "adcore_version")
         version = adcore_version.get() #returns something that looks like '3.2.1'
     
-    except TimeoutError as exinfo: #TODO: add check if IOC is running to make error more specific
+    except TimeoutError: #as exinfo: #TODO: add check if IOC is running to make error more specific
         version = '1.9.1'
-        logger.warning(f"{exinfo}. Assuming mininum version 1.9.")
+        logger.warning(f"Finding {det_prefix} AD version timed out. Assuming mininum version 1.9.")
         
-    # else:
-    #     raise ValueError("ADcore version not recognized. Please check that DET:cam1:ADCoreVersion_RBV is an existing PV and IOC is running.")
+    
     finally: 
         #after trying and excepting, select the plugin versions needed
         version_bits = version.split('.')
@@ -93,7 +88,7 @@ def find_det_version(
             Det_ROIPlugin = MPE_ROIPlugin
             Det_TIFFPlugin = MPE_TIFFPlugin
             Det_HDF5Plugin = MPE_HDF5Plugin
-            logger.info('Using vanilla plugins.')
+            #logger.info('Using vanilla plugins.')
             
         elif version_bits[0] == '3' and any(x == version_bits[1] for x in ['1', '2', '3']): #for versions '3.1','3.2','3.3'
             Det_CamBase = MPE_CamBase_V31
@@ -105,9 +100,9 @@ def find_det_version(
             Det_ROIPlugin = MPE_ROIPlugin_V31
             Det_TIFFPlugin = MPE_TIFFPlugin_V31
             Det_HDF5Plugin = MPE_HDF5Plugin_V31
-            logger.info("Using V31 plugins.")
+            #logger.info("Using V31 plugins.")
             
-        elif version_bits[0] == '3' and any(x == version_bits[1] for x in ['1', '2', '3']): #for versions '3.1','3.2','3.3'
+        elif version_bits[0] == '3' and not any(x == version_bits[1] for x in ['1','2','3']):  #for versions '3.4' and higher
             Det_CamBase = MPE_CamBase_V34
             Det_ImagePlugin = MPE_ImagePlugin_V34
             Det_PvaPlugin = MPE_PvaPlugin_V34
@@ -117,12 +112,13 @@ def find_det_version(
             Det_ROIPlugin = MPE_ROIPlugin_V34
             Det_TIFFPlugin = MPE_TIFFPlugin_V34
             Det_HDF5Plugin = MPE_HDF5Plugin_V34
-            logger.info('Using V34 plugins.')    
+            #logger.info('Using V34 plugins.')    
                 
         else:
-            raise ValueError(f"MPE custom plugins have not been generated for this version of ADcore = {version}.")
+            raise ValueError(f"""MPE custom plugins have not been generated for this version of ADcore = {version}. 
+                             Are you running the correct IOC version for {det_prefix}?""")
         
-        logger.info(f"Detector with prefix {det_prefix} using ADcore v{version}.")  
+        logger.info(f"Trying detector with prefix {det_prefix}, using ADcore v{version}.")  
     
     return [Det_CamBase, 
             Det_ImagePlugin, 
@@ -134,93 +130,97 @@ def find_det_version(
             Det_TIFFPlugin,
             Det_HDF5Plugin]
 
-def make_WIN_paths(
-    det_prefix,
-    local_drive,
-    image_dir
-):
+# FIXME
+# def make_WIN_paths(
+#     det_prefix,
+#     local_drive,
+#     image_dir
+# ):
     
-    """ 
-    Function to generate controls and local paths for a detector IOC that runs 
-    on Windows. 
+#     """ 
+#     Function to generate controls and local paths for a detector IOC that runs 
+#     on Windows. 
     
-    Colloqial definitions:
+#     Colloqial definitions:
     
-        Local path: location where the detector is writing data to. Can be local to 
-            machine where det IOC is running, or contained on the APS network. 
+#         Local path: location where the detector is writing data to. Can be local to 
+#             machine where det IOC is running, or contained on the APS network. 
             
-        Controls path: pathway Bluesky will use to look at the data being written. 
-            Virtually always on the APS network. 
+#         Controls path: pathway Bluesky will use to look at the data being written. 
+#             Virtually always on the APS network. 
         
-    PARAMETERS
+#     PARAMETERS
     
-    det_prefix *str* :
-        IOC prefix of the detector; must end with ":". (example : "s1_pixirad2:")
+#     det_prefix *str* :
+#         IOC prefix of the detector; must end with ":". (example : "s1_pixirad2:")
         
-    local_drive *str* : 
-        Windows drive where data is written; must end with ":". (example : "G:")
+#     local_drive *str* : 
+#         Windows drive where data is written; must end with ":". (example : "G:")
         
-    image_dir *str* : 
-        Experiment folder where data is written; must be common to both controls and local path. (example : "mpe_apr24/experiment1")
+#     image_dir *str* : 
+#         Experiment folder where data is written; must be common to both controls and local path. (example : "mpe_apr24/experiment1")
     
-    """
+#     """
     
-    #clean up det name and Windows Drive 
-    det_id = det_prefix.strip(":")
-    linux_drive = local_drive.strip(":")
+#     #clean up det name and Windows Drive 
+#     det_id = det_prefix.strip(":")
+#     linux_drive = local_drive.strip(":")
     
-    #define paths
-    CONTROLS_ROOT = os.path.join("/home/beams/S1IDUSER", det_id, linux_drive, '')   #Linux root for bluesky
-    LOCAL_ROOT = local_drive    #Windows root for det writing
-    IMAGE_DIR = image_dir  #TODO: pull this specifically from iconfig!!
+#     #define paths
+#     CONTROLS_ROOT = os.path.join("/home/beams/S1IDUSER", det_id, linux_drive, '')   #Linux root for bluesky
+#     LOCAL_ROOT = local_drive    #Windows root for det writing
+#     IMAGE_DIR = image_dir  #TODO: pull this specifically from iconfig!!
     
-    return [CONTROLS_ROOT, LOCAL_ROOT, IMAGE_DIR]
+#     return [CONTROLS_ROOT, LOCAL_ROOT, IMAGE_DIR]
 
-
-def make_LIN_paths(
-    local_drive,
-    image_dir
-):
-    """
-    Function to generate controls and local paths for a detector IOC that runs 
-    on Linux. 
+# #FIXME
+# def make_LIN_paths(
+#     local_drive,
+#     image_dir
+# ):
+#     """
+#     Function to generate controls and local paths for a detector IOC that runs 
+#     on Linux. 
     
-    Colloquial definitions:
+#     Colloquial definitions:
     
-        Local path: location where the detector is writing data to. Can be local to 
-            machine where det IOC is running, or contained on the APS network. 
+#         Local path: location where the detector is writing data to. Can be local to 
+#             machine where det IOC is running, or contained on the APS network. 
         
-        Controls path: pathway Bluesky will use to look at the data being written. 
-            Virtually always on the APS network. 
+#         Controls path: pathway Bluesky will use to look at the data being written. 
+#             Virtually always on the APS network. 
         
-    PARAMETERS
+#     PARAMETERS
             
-    local_drive *str* : 
-        Full Linux pathway where data is written. (example : "/scratch/tmp")
+#     local_drive *str* : 
+#         Full Linux pathway where data is written. (example : "/scratch/tmp")
         
-    image_dir *str* : 
-        Experiment folder where data is written; must be common to both controls and local path. (example : "mpe_apr24/experiment1")
-    """
+#     image_dir *str* : 
+#         Experiment folder where data is written; must be common to both controls and local path. (example : "mpe_apr24/experiment1")
+#     """
     
-    #define paths
-    CONTROLS_ROOT = "/home/beams/S1IDUSER/mnt/s1c"
-    LOCAL_ROOT = local_drive    #Linux root for det writing
-    IMAGE_DIR = image_dir  #TODO: pull this specifically from iconfig!!
+#     #define paths
+#     CONTROLS_ROOT = "/home/beams/S1IDUSER/mnt/s1c"
+#     LOCAL_ROOT = local_drive    #Linux root for det writing
+#     IMAGE_DIR = image_dir  #TODO: pull this specifically from iconfig!!
     
-    return [CONTROLS_ROOT, LOCAL_ROOT, IMAGE_DIR]
+#     return [CONTROLS_ROOT, LOCAL_ROOT, IMAGE_DIR]
 
 
 def make_det(
     det_prefix,
     device_name,
-    local_drive,
-    image_dir,
+    #local_drive,
+    READ_PATH,
+    WRITE_PATH,
     make_cam_plugin,
     default_plugin_control, #needed for class method
     custom_plugin_control = {}, #needed for class method
     det_mixin = None, 
     ioc_WIN = False, 
     pva1_exists = False,
+    use_tiff1 = True,
+    use_hdf1 = True,
 ):
     """ 
     Function to generate detector object or assign it as `None` if timeout.
@@ -233,13 +233,10 @@ def make_det(
     device_name *str* : 
         Name of the detector device. Should match the object name in python. 
     
+    #FIXME
     local_drive *str* : 
         If on Linux, full Linux pathway where data is written. (example : "/scratch/tmp")
         If on Windows, drive location where data is written; must end with ":". (example : "G:")
-    
-    image_dir *str* : 
-        Experiment folder where data is written; must be common to both 
-        controls and local path. (example : "mpe_apr24/experiment1")
     
     make_cam_plugin *class* : 
         Detector-specific cam plugin written in `DETECTOR.py` file. 
@@ -264,6 +261,16 @@ def make_det(
     pva1_exists *Boolean* : 
         True/False whether `DETECTOR:Pva1` PVs exist. NOT the same as whether Pva1 
         plugin should be enabled. (default : False) 
+        
+    use_tiff1 *Boolean* : 
+        True/False whether `DETECTOR:TIFF1` PVs should be used. NOT the same 
+        as whether the plugin should be enabled. (defualt : True)
+        
+    use_hdf1 *Boolean* :
+        True/False whether 'DETECTOR:HDF1` PVs should be used. NOT the same
+        as whether the plugin should be enabled. For some dets, hdf1 isn't
+        initialized with image dimensions and will throw and error. 
+        (default : True)
             
     """
         
@@ -281,27 +288,30 @@ def make_det(
     #generate detector-specific cam plugin (defined in `DETECTOR.py` file) using correct CamBase version
     Det_CamPlugin = make_cam_plugin(Det_CamBase = Det_CamBase) 
     
-    #generate read and write paths for WIN or LIN machines
-    #see `make_WIN_paths()` and `make_LIN_paths()`
-    if ioc_WIN:
-        [CONTROLS_ROOT, LOCAL_ROOT, IMAGE_DIR] = make_WIN_paths(
-            det_prefix = det_prefix, 
-            local_drive = local_drive, 
-            image_dir = image_dir)
+    #FIXME -- need standardized linux and windows paths/mounts
+    # #generate read and write paths for WIN or LIN machines
+    # #see `make_WIN_paths()` and `make_LIN_paths()`
+    # if ioc_WIN:
+    #     [CONTROLS_ROOT, LOCAL_ROOT, IMAGE_DIR] = make_WIN_paths(
+    #         det_prefix = det_prefix, 
+    #         local_drive = local_drive, 
+    #         image_dir = image_dir)
 
-    else: 
-        [CONTROLS_ROOT, LOCAL_ROOT, IMAGE_DIR] = make_LIN_paths(
-            local_drive = local_drive, 
-            image_dir = image_dir)     
+    # else: 
+    #     [CONTROLS_ROOT, LOCAL_ROOT, IMAGE_DIR] = make_LIN_paths(
+    #         local_drive = local_drive, 
+    #         image_dir = image_dir)     
     
-    #define complete read and write paths for file-writing plugins
-    WRITE_PATH = os.path.join(LOCAL_ROOT, IMAGE_DIR)
-    READ_PATH = os.path.join(CONTROLS_ROOT, IMAGE_DIR)
+    # #define complete read and write paths for file-writing plugins
+    # WRITE_PATH = os.path.join(LOCAL_ROOT, IMAGE_DIR)
+    # READ_PATH = os.path.join(CONTROLS_ROOT, IMAGE_DIR)
     
     #add protection in case det_mixin is not defined yet
     if not det_mixin:
         class EmptyFastsweepMixin(object):
-            print(f"Custom configuration methods have not been configured for this detector.")  #TODO: Add a reference to the det name
+            print(f"Custom configuration methods have not been configured for detector = {det_prefix}.")  
+            
+            #TODO: Can this be generalized for a detector??
             
         det_mixin = EmptyFastsweepMixin
     
@@ -320,12 +330,15 @@ def make_det(
         roi1 = ADComponent(Det_ROIPlugin, "ROI1:")
         
         #define file writing plugins
-        tiff1 = ADComponent(Det_TIFFPlugin, "TIFF1:",
+        if use_tiff1:
+            tiff1 = ADComponent(Det_TIFFPlugin, "TIFF1:",
                             write_path_template = WRITE_PATH,
                             read_path_template = READ_PATH)
-        # hdf1 = ADComponent(Det_HDF5Plugin, "HDF1:",
-        #                    write_path_template = WRITE_PATH, 
-        #                    read_path_template = READ_PATH)
+        
+        if use_hdf1:
+            hdf1 = ADComponent(Det_HDF5Plugin, "HDF1:",
+                            write_path_template = WRITE_PATH, 
+                            read_path_template = READ_PATH)
         
         #add a method to the object that will enable/disable plugins as desired
         def enable_plugins(
@@ -382,24 +395,30 @@ def make_det(
                 yield from bps.mv(self.roi1.enable, 1, self.roi1.nd_array_port, plugin_control["ndport_roi1"])
             else:
                 yield from bps.mv(self.roi1.enable, 0)
-                
-            if plugin_control["use_tiff1"]:
+            
+            if use_tiff1 and plugin_control['use_tiff1']:
                 yield from bps.mv(self.tiff1.enable, 1, self.tiff1.nd_array_port, plugin_control["ndport_tiff1"])
-            else: 
+            elif use_tiff1 and not plugin_control["use_tiff1"]:
                 yield from bps.mv(self.tiff1.enable, 0)
-                
-            # if plugin_control["use_hdf1"]:
-            #     yield from bps.mv(self.hdf1.enable,1, self.hdf1.nd_array_port, plugin_control["ndport_hdf1"])
-            # else: 
-            #     yield from bps.mv(self.hdf1.enable, 0) 
-    
+            elif not use_hdf1 and plugin_control["use_tiff1"]:
+                raise ValueError("Warning! Request to enable TIFF1 plugin, but it doesn't exist. Check DET.py file.")
+  
+            if use_hdf1 and plugin_control['use_hdf1']:
+                yield from bps.mv(self.hdf1.enable, 1, self.hdf1.nd_array_port, plugin_control["ndport_hdf1"])
+            elif use_hdf1 and not plugin_control["use_hdf1"]:
+                yield from bps.mv(self.hdf1.enable, 0)
+            elif not use_hdf1 and plugin_control["use_hdf1"]:
+                raise ValueError("Warning! Request to enable HDF1 plugin, but it doesn't exist. Check DET.py file.")
+  
     
     #generate object using class defined above
     try: 
         area_detector = MPEAreaDetector(det_prefix, name = device_name, labels = ("Detector",))
+        logger.info(f"SUCCESS. {device_name} created.")
+        
     except TimeoutError as exinfo:
         area_detector = None
-        logger.warning(f"Could not create {device_name} with prefix {det_prefix}. {exinfo}")
+        logger.warning(f"FAILED: DETECTOR NOT CREATED. Could not create {device_name} with prefix {det_prefix}. Is the IOC running?")
 
 
     return area_detector    

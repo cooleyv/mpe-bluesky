@@ -1,5 +1,5 @@
 """
-local, custom Device definitions
+Devices specific to 1-ID only.
 """
 
 # from ophyd.log import config_ophyd_logging
@@ -28,10 +28,14 @@ from .s1id_FPGAs import *
 #from .pso_fly_device import *
 
 #import measurement devices
-#from .s1ide_scalers import *
-#from .flir_oryx import *
-#from .ge_panels import *
-# from .retiga import *
-# from .pixiradv2 import *
-# from .pointgrey import *
-# from .varex import *
+# from .s1ide_scalers import *
+# rom .flir_oryx import *   #currently only at 20-ID
+from .ge_panels import *
+from .retiga import *
+from .pixiradv2 import *
+from .pointgrey import grasshopper1, pointgrey5 #waiting for pointgrey1_win deployment
+from .varex import s1varex1
+from .pilatus import s1idPil      #waiting for deployment of IOC
+# from .brillianse import *         #waitinf for deployment
+# from .spectrumlogic import *      #waiting for deployment
+# from .pimega import *     #waiting for deployment

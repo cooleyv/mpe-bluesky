@@ -16,37 +16,35 @@ RUNENGINE_METADATA:
   proposal_id: APSU-bdp2024
   databroker_catalog: *databroker_catalog
 
-# Directory to "autosave" the RE.md dictionary (uses PersistentDict)
-# Uncomment and modify to change from the default.
-RUNENGINE_MD_PATH: /home/beams/S1IDTEST/.config/Bluesky_RunEngine_md/
-
 #APS Data management
 DM_SETUP_FILE: "/home/dm/s1idge3dm/etc/dm.setup.sh"
 
-#Experimental information (specific to BTR/PI)
+# Experimental information (specific to BTR/PI)
 EXPERIMENT:
 
-  #Experimental folder appended to save paths
-  SAVE_DIRECTORY: mpe_jul24 
+  TITLE : Flyscan_BDP_Demo
+  DESCRIPTION : "Demonstrate MPE fly scan using 20IDD aero stage and Varex."
 
-  #Specify HDF5 configuration files
-  LAYOUT_FILE: /home/beams/S1IDUSER/mnt/s1b/bluesky_dev/hdf5_layout/Varex_layot.xml
-  ATTRIBUTE_FILE: /home/beams/S1IDUSER/mnt/s1b/bluesky_dev/hdf5_layout/Varex_attributes_6IDD.xml
+  #Experimental folder appended to save paths
+  PI_FOLDER: dev_jul24
+  DM_EXPERIMENT_NAME : dev_jul24
+
+  #HDF5 layout and attribute file paths moved to individual AD files! 
 
   #Select SMS
-  SMS: sms_aero           #options: sms_aero, sms_lab, mts, owis, rams3 
+  SMS: aero_roty          #options: sms_aero, sms_lab, mts, owis, rams3
 
   #Select detector(s) and DMS(s)
-  DETECTORS: 
+  DETECTORS:
 
     DATA_COLLECTORS:
-      imaging: null       #options: null, point_grey, grasshopper, retiga_tomo
-      scattering: null    #options: null, hydra, GE5, pilatus, varex, retiga_nf, oryx
-      saxs: null          #options: null, pixirad
-      other: null         #options: null, dic
+      imaging: null              #options: null, point_grey, grasshopper, retiga_tomo
+      scattering: varex20idff    #options: null, hydra, GE5, pilatus, varex, retiga_nf, oryx
+      saxs: null                 #options: null, pixirad
+      other: null                #options: null, dic
 
     MOTOR_STACKS:
-      imaging: tomo_e     #options: null, tomo_b, tomo_c, tomo_us_e, tomo_ds_e
+      imaging: null       #options: null, tomo_b, tomo_c, tomo_us_e, tomo_ds_e
       scattering: null    #options: null, hydra_positioner, det2_c, det2_e, nearfield, vff
       saxs: null          #options: null, saxs
       other: null         #options: null, four_circle
@@ -54,17 +52,26 @@ EXPERIMENT:
     HYDRA_PANELS: [ge1, ge2, ge3, ge4]  #order doesn't matter
 
   #Select sample environment
-  SAMPLE_ENV: null        #options: null, cmu_furnace, rf_tube, am 
+  SAMPLE_ENV: null        #options: null, cmu_furnace, rf_tube, am
 
-  #MONITOR_CHANNELS #potentially for flyscan 
+  #MONITOR_CHANNELS #potentially for flyscan
 
-ANALYSIS: 
-  analysis_subdir: analysis/hedm/ff_rec
-  analysis_workstation: califone
-  
+ANALYSIS:
+  dm_workflow_name : midas-ff
+  analysis_subdir: analysis/hedm/ff_rec/
+  analysis_workstations: [califone, polaris]
+  num_cpus: 64
+  num_frame_chunks: 100
+  pre_proc_thresh : 80
+
   #MIDAS parameter file
-  parameter_file: ps_shade_au.txt
-  
+  parameter_file: /home/beams/S20HEDM/ps_shade_au.txt
+
+# ---------------------------------------------------
+
+# Directory to "autosave" the RE.md dictionary (uses PersistentDict)
+# Uncomment and modify to change from the default.
+RUNENGINE_MD_PATH: /home/beams/S1IDTEST/.config/Bluesky_RunEngine_md/
 
 #Permissions
 # ALLOW_AREA_DETECTOR_WARMUP: true
